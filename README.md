@@ -1,2 +1,5 @@
-# rust-bs
-Szkolenie - Programowanie w języku Rust
+# Programowanie w języku Rust
+
+## Linki
+
+* https://www.rust-lang.org/
