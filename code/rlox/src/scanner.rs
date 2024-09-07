@@ -46,6 +46,12 @@ impl<'a> Scanner<'a> {
                 '+' => self.make_token(TokenType::PLUS),
                 '*' => self.make_token(TokenType::STAR),
                 ';' => self.make_token(TokenType::SEMICOLON),
+
+                '!' => self.make_token_if_matches('=', TokenType::BANG_EQUAL, TokenType::BANG),
+                '=' => self.make_token_if_matches('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
+                '>' => self.make_token_if_matches('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
+                '<' => self.make_token_if_matches('=', TokenType::LESS_EQUAL, TokenType::LESS),
+
                 _ => Err(TokenError(format!(
                     "Unexpected character: {}; Line: {}",
                     c, self.line
@@ -63,6 +69,16 @@ impl<'a> Scanner<'a> {
         })
     }
 
+    fn make_token_if_matches(&mut self, expected: char, if_token: TokenType, else_token: TokenType) -> TokenResult<'a> {
+        match self.peek() {
+            Some(c) if *c == expected => { 
+                self.advance();
+                self.make_token(if_token)
+            },
+            _ => self.make_token(else_token),
+        }
+    }
+
     fn skip_whitespaces(&mut self) {
         loop {
             match self.chars.peek() {
@@ -73,6 +89,10 @@ impl<'a> Scanner<'a> {
                 _ => break,
             }
         }
+    }
+
+    fn peek(&mut self) -> Option<&char> {
+        self.chars.peek()
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -113,6 +133,7 @@ pub struct Token<'a> {
 #[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum TokenType {
+    // Single-character tokens.
     LEFT_PAREN,
     RIGHT_PAREN,
     LEFT_BRACE,
@@ -124,4 +145,14 @@ pub enum TokenType {
     PLUS,
     STAR,
     EOF,
+
+    // One or two character tokens.
+    BANG,   // !
+    BANG_EQUAL, // !=
+    EQUAL,  // =
+    EQUAL_EQUAL, // ==
+    GREATER, // >
+    GREATER_EQUAL, // >=
+    LESS, // <
+    LESS_EQUAL, // <=
 }

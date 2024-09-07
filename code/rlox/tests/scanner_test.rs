@@ -84,3 +84,58 @@ fn scanning_a_single_character_lexems() {
         ]
     );
 }
+
+
+#[test]
+fn scanning_operators() {
+    let source = "= != == > < >= <=";
+
+    let mut scanner = Scanner::new(source);
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::EQUAL,
+                lexeme: "=",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::BANG_EQUAL,
+                lexeme: "!=",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::EQUAL_EQUAL,
+                lexeme: "==",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::GREATER,
+                lexeme: ">",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::LESS,
+                lexeme: "<",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::GREATER_EQUAL,
+                lexeme: ">=",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::LESS_EQUAL,
+                lexeme: "<=",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::EOF,
+                lexeme: "",
+                line: 1
+            }
+        ]
+    );
+}
