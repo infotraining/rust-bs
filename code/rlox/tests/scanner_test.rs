@@ -217,3 +217,37 @@ fn scanning_number_literals() {
 
 //     assert!(result.unwrap_err().0.contains("Unexpected character '.'."));
 // }
+
+#[test]
+fn scanning_identifiers() {
+    let source = "foo bar baz";
+
+    let mut scanner = Scanner::new(source);
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "foo",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "bar",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "baz",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Eof,
+                lexeme: "",
+                line: 1
+            }
+        ]
+    );
+}

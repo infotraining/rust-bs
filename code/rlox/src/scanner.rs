@@ -54,6 +54,8 @@ impl<'a> Scanner<'a> {
 
                 '"' => self.string(),
 
+                'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
+
                 _ => Err(TokenError(format!(
                     "Unexpected character: {}; Line: {}",
                     c, self.line
@@ -61,6 +63,19 @@ impl<'a> Scanner<'a> {
             },
             None => self.make_token(TokenType::Eof),
         }
+    }
+
+    fn identifier(&mut self) -> TokenResult<'a> {
+        loop {
+            match self.peek() {
+                Some(c) if c.is_alphanumeric() || *c == '_' => {
+                    self.advance();
+                }
+                _ => break,
+            }
+        }
+
+        self.make_token(TokenType::Identifier)
     }
 
     fn number(&mut self) -> TokenResult<'a> {
@@ -198,7 +213,8 @@ pub enum TokenType {
     Less,         // <
     LessEqual,    // <=
 
-    // String and number tokens.
+    // String, number and identifier tokens.
     String,
     Number,
+    Identifier
 }
