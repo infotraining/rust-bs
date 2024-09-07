@@ -1,4 +1,4 @@
-use rlox::scanner::{Scanner, Token, TokenType};
+use rlox::scanner::{Scanner, Token, TokenType, TokenError};
 
 #[test]
 fn scanning_empty_string() {
@@ -9,7 +9,7 @@ fn scanning_empty_string() {
     assert_eq!(
         tokens,
         vec![Token {
-            token_type: TokenType::EOF,
+            token_type: TokenType::Eof,
             lexeme: "",
             line: 1
         }]
@@ -27,57 +27,57 @@ fn scanning_a_single_character_lexems() {
         tokens,
         vec![
             Token {
-                token_type: TokenType::LEFT_PAREN,
+                token_type: TokenType::LeftParen,
                 lexeme: "(",
                 line: 1
             },
             Token {
-                token_type: TokenType::RIGHT_PAREN,
+                token_type: TokenType::RightParen,
                 lexeme: ")",
                 line: 1
             },
             Token {
-                token_type: TokenType::LEFT_BRACE,
+                token_type: TokenType::LeftBrace,
                 lexeme: "{",
                 line: 1
             },
             Token {
-                token_type: TokenType::RIGHT_BRACE,
+                token_type: TokenType::RightBrace,
                 lexeme: "}",
                 line: 1
             },
             Token {
-                token_type: TokenType::COMMA,
+                token_type: TokenType::Comma,
                 lexeme: ",",
                 line: 1
             },
             Token {
-                token_type: TokenType::DOT,
+                token_type: TokenType::Dot,
                 lexeme: ".",
                 line: 1
             },
             Token {
-                token_type: TokenType::MINUS,
+                token_type: TokenType::Minus,
                 lexeme: "-",
                 line: 1
             },
             Token {
-                token_type: TokenType::PLUS,
+                token_type: TokenType::Plus,
                 lexeme: "+",
                 line: 1
             },
             Token {
-                token_type: TokenType::STAR,
+                token_type: TokenType::Star,
                 lexeme: "*",
                 line: 1
             },
             Token {
-                token_type: TokenType::SEMICOLON,
+                token_type: TokenType::Semicolon,
                 lexeme: ";",
                 line: 1
             },
             Token {
-                token_type: TokenType::EOF,
+                token_type: TokenType::Eof,
                 lexeme: "",
                 line: 1
             }
@@ -97,45 +97,79 @@ fn scanning_operators() {
         tokens,
         vec![
             Token {
-                token_type: TokenType::EQUAL,
+                token_type: TokenType::Equal,
                 lexeme: "=",
                 line: 1
             },
             Token {
-                token_type: TokenType::BANG_EQUAL,
+                token_type: TokenType::BangEqual,
                 lexeme: "!=",
                 line: 1
             },
             Token {
-                token_type: TokenType::EQUAL_EQUAL,
+                token_type: TokenType::EqualEqual,
                 lexeme: "==",
                 line: 1
             },
             Token {
-                token_type: TokenType::GREATER,
+                token_type: TokenType::Greater,
                 lexeme: ">",
                 line: 1
             },
             Token {
-                token_type: TokenType::LESS,
+                token_type: TokenType::Less,
                 lexeme: "<",
                 line: 1
             },
             Token {
-                token_type: TokenType::GREATER_EQUAL,
+                token_type: TokenType::GreaterEqual,
                 lexeme: ">=",
                 line: 1
             },
             Token {
-                token_type: TokenType::LESS_EQUAL,
+                token_type: TokenType::LessEqual,
                 lexeme: "<=",
                 line: 1
             },
             Token {
-                token_type: TokenType::EOF,
+                token_type: TokenType::Eof,
                 lexeme: "",
                 line: 1
             }
         ]
     );
+}
+
+#[test]
+fn scanning_string() {
+    let source = "\"Hello, World!\"";
+
+    let mut scanner = Scanner::new(source);
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::String,
+                lexeme: "Hello, World!",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Eof,
+                lexeme: "",
+                line: 1
+            }
+        ]
+    );
+}
+
+#[test]
+fn scanning_unterminated_string() {
+    let source = "\"Hello, World!";
+
+    let mut scanner = Scanner::new(source);
+    let result = scanner.scan_tokens();
+
+    assert_eq!(result.unwrap_err(), TokenError("Unterminated string.".to_string()));
 }

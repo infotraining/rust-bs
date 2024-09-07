@@ -12,7 +12,7 @@ pub struct Scanner<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct TokenError(String);
+pub struct TokenError(pub String);
 
 pub type TokenResult<'a> = Result<Token<'a>, TokenError>;
 
@@ -36,29 +36,50 @@ impl<'a> Scanner<'a> {
 
         match self.advance() {
             Some(c) => match c {
-                '(' => self.make_token(TokenType::LEFT_PAREN),
-                ')' => self.make_token(TokenType::RIGHT_PAREN),
-                '{' => self.make_token(TokenType::LEFT_BRACE),
-                '}' => self.make_token(TokenType::RIGHT_BRACE),
-                ',' => self.make_token(TokenType::COMMA),
-                '.' => self.make_token(TokenType::DOT),
-                '-' => self.make_token(TokenType::MINUS),
-                '+' => self.make_token(TokenType::PLUS),
-                '*' => self.make_token(TokenType::STAR),
-                ';' => self.make_token(TokenType::SEMICOLON),
+                '(' => self.make_token(TokenType::LeftParen),
+                ')' => self.make_token(TokenType::RightParen),
+                '{' => self.make_token(TokenType::LeftBrace),
+                '}' => self.make_token(TokenType::RightBrace),
+                ',' => self.make_token(TokenType::Comma),
+                '.' => self.make_token(TokenType::Dot),
+                '-' => self.make_token(TokenType::Minus),
+                '+' => self.make_token(TokenType::Plus),
+                '*' => self.make_token(TokenType::Star),
+                ';' => self.make_token(TokenType::Semicolon),
 
-                '!' => self.make_token_if_matches('=', TokenType::BANG_EQUAL, TokenType::BANG),
-                '=' => self.make_token_if_matches('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
-                '>' => self.make_token_if_matches('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
-                '<' => self.make_token_if_matches('=', TokenType::LESS_EQUAL, TokenType::LESS),
+                '!' => self.make_token_if_matches('=', TokenType::BangEqual, TokenType::Bang),
+                '=' => self.make_token_if_matches('=', TokenType::EqualEqual, TokenType::Equal),
+                '>' => self.make_token_if_matches('=', TokenType::GreaterEqual, TokenType::Greater),
+                '<' => self.make_token_if_matches('=', TokenType::LessEqual, TokenType::Less),
+
+                '"' => self.string(),
 
                 _ => Err(TokenError(format!(
                     "Unexpected character: {}; Line: {}",
                     c, self.line
                 ))),
             },
-            None => self.make_token(TokenType::EOF),
+            None => self.make_token(TokenType::Eof),
         }
+    }
+
+    fn string(&mut self) -> TokenResult<'a> {
+        self.start += 1; // Consume the opening ".
+
+        loop {
+            match self.peek() {
+                Some(c) if *c == '"' => break,
+                Some('\n') => self.line += 1,
+                None => return Err(TokenError("Unterminated string.".to_string())),
+                _ => (),
+            }
+
+            self.advance();
+        }
+
+        let string_token = self.make_token(TokenType::String);
+        self.advance(); // Consume the closing ".
+        string_token
     }
 
     fn make_token(&self, token_type: TokenType) -> TokenResult<'a> {
@@ -110,7 +131,7 @@ impl<'a> Scanner<'a> {
 
         loop {
             match self.scan_token() {
-                Ok(token) if token.token_type == TokenType::EOF => {
+                Ok(token) if token.token_type == TokenType::Eof => {
                     tokens.push(token);
                     break;
                 }
@@ -131,28 +152,30 @@ pub struct Token<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-#[allow(non_camel_case_types)]
 pub enum TokenType {
     // Single-character tokens.
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    LEFT_BRACE,
-    RIGHT_BRACE,
-    COMMA,
-    DOT,
-    SEMICOLON,
-    MINUS,
-    PLUS,
-    STAR,
-    EOF,
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Dot,
+    Semicolon,
+    Minus,
+    Plus,
+    Star,
+    Eof,
 
     // One or two character tokens.
-    BANG,   // !
-    BANG_EQUAL, // !=
-    EQUAL,  // =
-    EQUAL_EQUAL, // ==
-    GREATER, // >
-    GREATER_EQUAL, // >=
-    LESS, // <
-    LESS_EQUAL, // <=
+    Bang,   // !
+    BangEqual, // !=
+    Equal,  // =
+    EqualEqual, // ==
+    Greater, // >
+    GreaterEqual, // >=
+    Less, // <
+    LessEqual, // <=
+
+    // String and number tokens.
+    String,
 }
