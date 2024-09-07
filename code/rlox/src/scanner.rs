@@ -1,4 +1,3 @@
-
 use peekmore::PeekMore;
 use peekmore::PeekMoreIterator;
 use std::str::Chars;
@@ -35,6 +34,7 @@ impl<'a> Scanner<'a> {
         self.start = self.current;
 
         match self.advance() {
+            Some(c) if c.is_digit(10) => self.number(),
             Some(c) => match c {
                 '(' => self.make_token(TokenType::LeftParen),
                 ')' => self.make_token(TokenType::RightParen),
@@ -61,6 +61,23 @@ impl<'a> Scanner<'a> {
             },
             None => self.make_token(TokenType::Eof),
         }
+    }
+
+    fn number(&mut self) -> TokenResult<'a> {
+        loop {
+            match self.peek() {
+                Some(c) if c.is_digit(10) => {
+                    self.advance();
+                }
+                Some('.') => {
+                    self.advance();
+                },
+                Some(_) => break,
+                None => break,
+            }
+        }
+
+        self.make_token(TokenType::Number)
     }
 
     fn string(&mut self) -> TokenResult<'a> {
@@ -90,12 +107,17 @@ impl<'a> Scanner<'a> {
         })
     }
 
-    fn make_token_if_matches(&mut self, expected: char, if_token: TokenType, else_token: TokenType) -> TokenResult<'a> {
+    fn make_token_if_matches(
+        &mut self,
+        expected: char,
+        if_token: TokenType,
+        else_token: TokenType,
+    ) -> TokenResult<'a> {
         match self.peek() {
-            Some(c) if *c == expected => { 
+            Some(c) if *c == expected => {
                 self.advance();
                 self.make_token(if_token)
-            },
+            }
             _ => self.make_token(else_token),
         }
     }
@@ -167,15 +189,16 @@ pub enum TokenType {
     Eof,
 
     // One or two character tokens.
-    Bang,   // !
-    BangEqual, // !=
-    Equal,  // =
-    EqualEqual, // ==
-    Greater, // >
+    Bang,         // !
+    BangEqual,    // !=
+    Equal,        // =
+    EqualEqual,   // ==
+    Greater,      // >
     GreaterEqual, // >=
-    Less, // <
-    LessEqual, // <=
+    Less,         // <
+    LessEqual,    // <=
 
     // String and number tokens.
     String,
+    Number,
 }

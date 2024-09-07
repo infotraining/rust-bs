@@ -173,3 +173,47 @@ fn scanning_unterminated_string() {
 
     assert_eq!(result.unwrap_err(), TokenError("Unterminated string.".to_string()));
 }
+
+#[test]
+fn scanning_number_literals() {
+    let source = "123 456 789.34";
+
+    let mut scanner = Scanner::new(source);
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::Number,
+                lexeme: "123",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Number,
+                lexeme: "456",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Number,
+                lexeme: "789.34",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Eof,
+                lexeme: "",
+                line: 1
+            }
+        ]
+    );
+}
+
+// #[test]
+// fn scanning_floating_point_with_two_dots() {
+//     let source = "123..45";
+
+//     let mut scanner = Scanner::new(source);
+//     let result = scanner.scan_tokens();
+
+//     assert!(result.unwrap_err().0.contains("Unexpected character '.'."));
+// }
