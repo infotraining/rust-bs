@@ -1,5 +1,7 @@
+use lazy_static::lazy_static;
 use peekmore::PeekMore;
 use peekmore::PeekMoreIterator;
+use std::collections::HashMap;
 use std::str::Chars;
 
 pub struct Scanner<'a> {
@@ -75,7 +77,10 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        self.make_token(TokenType::Identifier)
+        let lexeme = &self.source[self.start..self.current];
+        let token_type = KEYWORDS.get(lexeme).unwrap_or(&TokenType::Identifier);
+
+        self.make_token(*token_type)
     }
 
     fn number(&mut self) -> TokenResult<'a> {
@@ -140,6 +145,11 @@ impl<'a> Scanner<'a> {
     fn skip_whitespaces(&mut self) {
         loop {
             match self.chars.peek() {
+                Some('\n') => {
+                    self.chars.next();
+                    self.line += 1;
+                    self.current += 1;
+                }
                 Some(c) if c.is_whitespace() => {
                     self.chars.next();
                     self.current += 1;
@@ -188,7 +198,7 @@ pub struct Token<'a> {
     pub line: i32,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -216,5 +226,46 @@ pub enum TokenType {
     // String, number and identifier tokens.
     String,
     Number,
-    Identifier
+    Identifier,
+
+    // Keywords.
+    And,
+    Class,
+    Else,
+    False,
+    Fun,
+    For,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
+}
+
+lazy_static! {
+    static ref KEYWORDS: HashMap<&'static str, TokenType> = {
+        let mut m = HashMap::new();
+        m.insert("and", TokenType::And);
+        m.insert("class", TokenType::Class);
+        m.insert("else", TokenType::Else);
+        m.insert("false", TokenType::False);
+        m.insert("for", TokenType::For);
+        m.insert("fun", TokenType::Fun);
+        m.insert("if", TokenType::If);
+        m.insert("nil", TokenType::Nil);
+        m.insert("or", TokenType::Or);
+        m.insert("print", TokenType::Print);
+        m.insert("return", TokenType::Return);
+        m.insert("super", TokenType::Super);
+        m.insert("this", TokenType::This);
+        m.insert("true", TokenType::True);
+        m.insert("var", TokenType::Var);
+        m.insert("while", TokenType::While);
+        m
+    };
 }

@@ -251,3 +251,197 @@ fn scanning_identifiers() {
         ]
     );
 }
+
+#[test]
+fn scanning_keywords() {
+    let source = "and class else false for fun if nil or print return super this true var while";
+
+    let mut scanner = Scanner::new(source);
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::And,
+                lexeme: "and",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Class,
+                lexeme: "class",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Else,
+                lexeme: "else",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::False,
+                lexeme: "false",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::For,
+                lexeme: "for",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Fun,
+                lexeme: "fun",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::If,
+                lexeme: "if",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Nil,
+                lexeme: "nil",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Or,
+                lexeme: "or",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Print,
+                lexeme: "print",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Return,
+                lexeme: "return",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Super,
+                lexeme: "super",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::This,
+                lexeme: "this",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::True,
+                lexeme: "true",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Var,
+                lexeme: "var",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::While,
+                lexeme: "while",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Eof,
+                lexeme: "",
+                line: 1
+            }
+        ]
+    );
+}
+
+#[test]
+fn scanning_source_with_many_lines() {
+    let source = "var text = \"Text\";\nvar a = 4;\r\n\nvar b = 3.14;";
+
+    let mut scanner = Scanner::new(source);
+
+    let tokens = scanner.scan_tokens().unwrap();
+
+    assert_eq!(
+        tokens,
+        vec![
+            Token {
+                token_type: TokenType::Var,
+                lexeme: "var",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "text",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Equal,
+                lexeme: "=",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::String,
+                lexeme: "Text",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Semicolon,
+                lexeme: ";",
+                line: 1
+            },
+            Token {
+                token_type: TokenType::Var,
+                lexeme: "var",
+                line: 2
+            },
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "a",
+                line: 2
+            },
+            Token {
+                token_type: TokenType::Equal,
+                lexeme: "=",
+                line: 2
+            },
+            Token {
+                token_type: TokenType::Number,
+                lexeme: "4",
+                line: 2
+            },
+            Token {
+                token_type: TokenType::Semicolon,
+                lexeme: ";",
+                line: 2
+            },
+            Token {
+                token_type: TokenType::Var,
+                lexeme: "var",
+                line: 4
+            },
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: "b",
+                line: 4
+            },
+            Token {
+                token_type: TokenType::Equal,
+                lexeme: "=",
+                line: 4
+            },
+            Token {
+                token_type: TokenType::Number,
+                lexeme: "3.14",
+                line: 4
+            },
+            Token {
+                token_type: TokenType::Semicolon,
+                lexeme: ";",
+                line: 4
+            },
+            Token {
+                token_type: TokenType::Eof,
+                lexeme: "",
+                line: 4
+            }
+        ]
+    );
+}
