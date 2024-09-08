@@ -1,36 +1,94 @@
 use crate::scanner::{Token, TokenType};
 
-
 #[derive(Debug)]
-pub enum Expression{
+pub enum Expression {
     Number(f64),
     Binary(Box<Expression>, TokenType, Box<Expression>),
     Unary(TokenType, Box<Expression>),
     Grouping(Box<Expression>),
 }
 
-fn print_ast(expression: &Expression) -> String {
+pub trait AstVisitor {
+    fn visit_number(&mut self, number: f64);
+    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression);
+    fn visit_unary(&mut self, operator: &TokenType, right: &Expression);
+    fn visit_grouping(&mut self, expression: &Expression);
+}
+
+pub fn accept_visitor<V: AstVisitor>(visitor: &mut V, expression: &Expression) {
     match expression {
-        Expression::Number(n) => n.to_string(),
-        
+        Expression::Number(n) => visitor.visit_number(*n),
+
         Expression::Binary(left, operator, right) => {
-            format!("({:?} {} {})", operator, print_ast(left), print_ast(right))
+            visitor.visit_binary(left, operator, right);
+            // accept_visitor(visitor, left);
+            // accept_visitor(visitor, right);
         }
-        
+
         Expression::Unary(operator, right) => {
-            format!("({:?} {})", operator, print_ast(right))
+            visitor.visit_unary(operator, right);
+            //accept_visitor(visitor, right);
         }
-        
+
         Expression::Grouping(expression) => {
-            format!("(group {})", print_ast(expression))
+            visitor.visit_grouping(expression);
+            //accept_visitor(visitor, expression);
         }
     }
+}
+
+pub struct AstPrinter {
+    pub result: String,
+}
+
+impl AstPrinter {
+    pub fn new() -> Self {
+        Self {
+            result: String::new(),
+        }
+    }
+}
+
+impl AstVisitor for AstPrinter {
+    fn visit_number(&mut self, number: f64) {
+        self.result.push_str(&number.to_string());
+    }
+
+    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) {
+        self.result.push_str("(");
+        self.result.push_str(&format!("{:?}", operator));
+        self.result.push_str(" ");
+        accept_visitor(self, left);
+        self.result.push_str(" ");
+        accept_visitor(self, right);
+        self.result.push_str(")");
+    }
+
+    fn visit_unary(&mut self, operator: &TokenType, right: &Expression) {
+        self.result.push_str("(");
+        self.result.push_str(&format!("{:?}", operator));
+        self.result.push_str(" ");
+        accept_visitor(self, right);
+        self.result.push_str(")");
+    }
+
+    fn visit_grouping(&mut self, expression: &Expression) {
+        self.result.push_str("(group ");
+        accept_visitor(self, expression);
+        self.result.push_str(")");
+    }
+}
+
+fn print_ast(expression: &Expression) -> String {
+    let mut printer = AstPrinter::new();
+    accept_visitor(&mut printer, expression);
+    return printer.result;
 }
 
 fn evaluate_numeric_expression(expression: &Expression) -> f64 {
     match expression {
         Expression::Number(n) => *n,
-        
+
         Expression::Binary(left, operator, right) => {
             let left = evaluate_numeric_expression(left);
             let right = evaluate_numeric_expression(right);
@@ -42,18 +100,16 @@ fn evaluate_numeric_expression(expression: &Expression) -> f64 {
                 _ => panic!("Unknown operator: {:?}", operator),
             }
         }
-        
+
         Expression::Unary(operator, right) => {
             let right = evaluate_numeric_expression(right);
             match operator {
-                TokenType::Minus => -right,                
+                TokenType::Minus => -right,
                 _ => panic!("Unknown operator: {:?}", operator),
             }
         }
-        
-        Expression::Grouping(expression) => {
-            evaluate_numeric_expression(expression)
-        }
+
+        Expression::Grouping(expression) => evaluate_numeric_expression(expression),
     }
 }
 
@@ -67,7 +123,7 @@ impl<'a> Parser<'a> {
     fn new(source: &'a str) -> Self {
         let mut scanner = crate::scanner::Scanner::new(source);
         let mut scanned_tokens: Vec<Token<'a>> = scanner.scan_tokens().unwrap();
-        
+
         Self {
             source: source,
             tokens: scanned_tokens,
@@ -94,7 +150,12 @@ impl<'a> Parser<'a> {
     fn comparison(&mut self) -> Expression {
         let mut expression = self.term();
 
-        while self.match_token(&[TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
+        while self.match_token(&[
+            TokenType::Greater,
+            TokenType::GreaterEqual,
+            TokenType::Less,
+            TokenType::LessEqual,
+        ]) {
             let operator = self.previous().token_type;
             let right = self.term();
             expression = Expression::Binary(Box::new(expression), operator, Box::new(right));
@@ -227,39 +288,66 @@ mod parser_tests {
             TokenType::Plus,
             Box::new(Expression::Number(2.0)),
         );
- 
-        assert_eq!(format!("{:?}", expression), "Binary(Number(1.0), Plus, Number(2.0))");
-        
+
+        assert_eq!(
+            format!("{:?}", expression),
+            "Binary(Number(1.0), Plus, Number(2.0))"
+        );
+
         assert_eq!(print_ast(&expression), "(Plus 1 2)");
+    }
+
+    #[test]
+    fn test_ast_printer() {
+        let expression = Expression::Binary(
+            Box::new(Expression::Number(1.0)),
+            TokenType::Plus,
+            Box::new(Expression::Number(2.0)),
+        );
+
+        let mut printer = AstPrinter::new();
+        accept_visitor(&mut printer, &expression);
+
+        assert_eq!(printer.result, "(Plus 1 2)");
     }
 
     fn simple_unary_expression() {
         use crate::parser::{Expression, TokenType};
-        let expression = Expression::Unary(
-            TokenType::Minus,
-            Box::new(Expression::Number(1.0)),
-        );
- 
+        let expression = Expression::Unary(TokenType::Minus, Box::new(Expression::Number(1.0)));
+
         assert_eq!(format!("{:?}", expression), "Unary(Minus, Number(1.0))");
-        
+
         assert_eq!(print_ast(&expression), "(Minus 1)");
     }
 
     fn simple_grouping_expression() {
         use crate::parser::{Expression, TokenType};
-        let expression = 
-            Expression::Binary(
-                Box::new(Expression::Grouping(
-                    Box::new(Expression::Binary(Box::new(Expression::Number(1.0)), TokenType::Plus, Box::new(Expression::Number(2.0))))
-                )),
-                TokenType::Star,
-                Box::new(Expression::Grouping(
-                    Box::new(Expression::Binary(Box::new(Expression::Number(1.0)), TokenType::Plus, Box::new(Expression::Number(2.0))))
-                ))
-            );
+        let expression = Expression::Binary(
+            Box::new(Expression::Grouping(Box::new(Expression::Binary(
+                Box::new(Expression::Number(1.0)),
+                TokenType::Plus,
+                Box::new(Expression::Number(2.0)),
+            )))),
+            TokenType::Star,
+            Box::new(Expression::Grouping(Box::new(Expression::Binary(
+                Box::new(Expression::Number(1.0)),
+                TokenType::Plus,
+                Box::new(Expression::Number(2.0)),
+            )))),
+        );
         assert_eq!(format!("{:?}", expression), "Binary(Grouping(Binary(Number(1.0), Plus, Number(2.0))), Star, Grouping(Binary(Number(1.0), Plus, Number(2.0)))");
-        
-        assert_eq!(print_ast(&expression), "(Star (group (Plus 1 2)) (group (Plus 1 2)))");
+
+        let mut printer = AstPrinter::new();
+        accept_visitor(&mut printer, &expression);
+        assert_eq!(
+            printer.result,
+            "(Star (group (Plus 1 2)) (group (Plus 1 2)))"
+        );
+
+        assert_eq!(
+            print_ast(&expression),
+            "(Star (group (Plus 1 2)) (group (Plus 1 2)))"
+        );
     }
 
     #[test]
@@ -268,7 +356,10 @@ mod parser_tests {
         let mut parser = Parser::new(source);
         let expression = parser.parse();
 
-        assert_eq!(format!("{:?}", expression), "Binary(Number(1.0), Plus, Binary(Number(2.0), Star, Number(3.0)))");
+        assert_eq!(
+            format!("{:?}", expression),
+            "Binary(Number(1.0), Plus, Binary(Number(2.0), Star, Number(3.0)))"
+        );
         assert_eq!(print_ast(&expression), "(Plus 1 (Star 2 3))");
     }
 
@@ -279,7 +370,10 @@ mod parser_tests {
         let expression = parser.parse();
 
         assert_eq!(format!("{:?}", expression), "Unary(Minus, Grouping(Binary(Grouping(Binary(Number(1.0), Plus, Number(2.0))), Star, Grouping(Binary(Number(4.0), Minus, Number(2.0))))))");
-        assert_eq!(print_ast(&expression), "(Minus (group (Star (group (Plus 1 2)) (group (Minus 4 2)))))");
+        assert_eq!(
+            print_ast(&expression),
+            "(Minus (group (Star (group (Plus 1 2)) (group (Minus 4 2)))))"
+        );
     }
 
     #[test]
@@ -299,7 +393,10 @@ mod parser_tests {
         let mut parser = Parser::new(source);
         let expression = parser.parse();
 
-        assert_eq!(format!("{:?}", expression), "Binary(Number(1.0), Plus, Binary(Number(2.0), Star, Number(0.0))");
+        assert_eq!(
+            format!("{:?}", expression),
+            "Binary(Number(1.0), Plus, Binary(Number(2.0), Star, Number(0.0))"
+        );
         assert_eq!(print_ast(&expression), "(Plus 1 (Star 2 0))");
     }
 
@@ -312,5 +409,4 @@ mod parser_tests {
 
         assert_eq!(result, -6.0);
     }
-
 }
