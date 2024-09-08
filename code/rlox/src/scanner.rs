@@ -47,6 +47,7 @@ impl<'a> Scanner<'a> {
                 '-' => self.make_token(TokenType::Minus),
                 '+' => self.make_token(TokenType::Plus),
                 '*' => self.make_token(TokenType::Star),
+                '/' => self.make_token(TokenType::Slash),
                 ';' => self.make_token(TokenType::Semicolon),
 
                 '!' => self.make_token_if_matches('=', TokenType::BangEqual, TokenType::Bang),
@@ -173,7 +174,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, TokenError> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token<'a>>, TokenError> {
         let mut tokens = Vec::new();
 
         loop {
@@ -211,6 +212,7 @@ pub enum TokenType {
     Minus,
     Plus,
     Star,
+    Slash,
     Eof,
 
     // One or two character tokens.
