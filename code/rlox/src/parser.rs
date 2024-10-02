@@ -1,11 +1,34 @@
 use crate::scanner::{Token, TokenType};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(f64),
     String(String),
     Boolean(bool),
     Nil,
+}
+
+impl Value {
+    pub fn as_number(&self) -> Option<f64> {
+        match self {
+            Value::Number(n) => { Some(*n) }
+            _ => { None }
+        }
+    }
+
+    pub fn as_boolean(&self) -> Option<bool> {
+        match self {
+            Value::Boolean(b) => { Some(*b) }
+            _ => { None }
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&String> {
+        match self {
+            Value::String(s) => { Some(s) }
+            _ => { None }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -17,32 +40,26 @@ pub enum Expression {
 }
 
 pub trait AstVisitor {
-    //fn visit_number(&mut self, number: f64);
-    //fn visit_literal(&mut self, expression: &Expression);
-    fn visit_literal(&mut self, value: &Value);
-    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression);
-    fn visit_unary(&mut self, operator: &TokenType, right: &Expression);
-    fn visit_grouping(&mut self, expression: &Expression);
+    fn visit_literal(&mut self, value: &Value) -> Option<Value>;
+    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Option<Value>;
+    fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Option<Value>;
+    fn visit_grouping(&mut self, expression: &Expression) -> Option<Value>;
 }
 
-pub fn accept_visitor<V: AstVisitor>(visitor: &mut V, expression: &Expression) {
+pub fn accept_visitor<V: AstVisitor>(visitor: &mut V, expression: &Expression) -> Option<Value> {
     match expression {
         Expression::Literal(value) => { visitor.visit_literal(value) }
 
         Expression::Binary(left, operator, right) => {
-            visitor.visit_binary(left, operator, right);
-            // accept_visitor(visitor, left);
-            // accept_visitor(visitor, right);
+            visitor.visit_binary(left, operator, right)
         }
 
         Expression::Unary(operator, right) => {
-            visitor.visit_unary(operator, right);
-            //accept_visitor(visitor, right);
+            visitor.visit_unary(operator, right)
         }
 
         Expression::Grouping(expression) => {
-            visitor.visit_grouping(expression);
-            //accept_visitor(visitor, expression);
+            visitor.visit_grouping(expression)
         }
     }
 }
@@ -60,16 +77,17 @@ impl AstPrinter {
 }
 
 impl AstVisitor for AstPrinter {
-    fn visit_literal(&mut self, value: &Value) {
+    fn visit_literal(&mut self, value: &Value) -> Option<Value> {
         match value {
             Value::Number(n) => self.result.push_str(&n.to_string()),
             Value::String(s) => self.result.push_str(&s),
             Value::Boolean(b) => self.result.push_str(&b.to_string()),
             Value::Nil => self.result.push_str("nil"),
-        }
+        };
+        None
     }
 
-    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) {
+    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Option<Value> {
         self.result.push_str("(");
         self.result.push_str(&format!("{:?}", operator));
         self.result.push_str(" ");
@@ -77,20 +95,23 @@ impl AstVisitor for AstPrinter {
         self.result.push_str(" ");
         accept_visitor(self, right);
         self.result.push_str(")");
+        None
     }
 
-    fn visit_unary(&mut self, operator: &TokenType, right: &Expression) {
+    fn visit_unary(&mut self, operator: &TokenType, right: &Expression) -> Option<Value> {
         self.result.push_str("(");
         self.result.push_str(&format!("{:?}", operator));
         self.result.push_str(" ");
         accept_visitor(self, right);
         self.result.push_str(")");
+        None
     }
 
-    fn visit_grouping(&mut self, expression: &Expression) {
+    fn visit_grouping(&mut self, expression: &Expression) -> Option<Value> {
         self.result.push_str("(group ");
         accept_visitor(self, expression);
         self.result.push_str(")");
+        None
     }
 }
 
@@ -140,7 +161,7 @@ struct Parser<'a> {
 impl<'a> Parser<'a> {
     fn new(source: &'a str) -> Self {
         let mut scanner = crate::scanner::Scanner::new(source);
-        let mut scanned_tokens: Vec<Token<'a>> = scanner.scan_tokens().unwrap();
+        let scanned_tokens: Vec<Token<'a>> = scanner.scan_tokens().unwrap();
 
         Self {
             source: source,
