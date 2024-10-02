@@ -1,13 +1,21 @@
-use crate::parser::accept_visitor;
-use crate::parser::AstVisitor;
-use crate::parser::Expression;
-use crate::parser::Value;
+use crate::ast::{Value, Expression, AstVisitor, AstResult, accept_visitor};
 use crate::scanner::TokenType;
 
+
+#[derive(Debug, Clone)]
+pub struct InterpreterError
+{
+    message: String,
+    line: i32,
+    column: i32
+}
+
+type EvaluationResult = Result<Value, InterpreterError>;
 
 pub struct Interpreter
 {
 }
+
 
 impl Interpreter
 {
@@ -16,7 +24,7 @@ impl Interpreter
         Interpreter {}
     }
 
-    pub fn evaluate(&mut self, expression: &Expression) -> Option<Value>
+    pub fn evaluate(&mut self, expression: &Expression) -> AstResult<Value>
     {
         accept_visitor(self, expression)
     }
@@ -45,31 +53,33 @@ impl Interpreter
 
 impl AstVisitor for Interpreter
 {
-    fn visit_literal(&mut self, value: &Value) -> Option<Value> {
-        Some(value.clone())        
+    type VisitResult = AstResult<Value>;
+
+    fn visit_literal(&mut self, value: &Value) -> Self::VisitResult {
+        Ok(value.clone())        
     }
 
-    fn visit_grouping(&mut self, expression: &Expression) -> Option<Value>{
+    fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult {
         self.evaluate(expression)
     }
     
-    fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Option<Value>{
+    fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Self::VisitResult {
         
         let value = self.evaluate(expression).unwrap();
         
         match operator {
             TokenType::Minus => {
                 let right = value.as_number().unwrap();
-                Some(Value::Number(-right))
+                Ok(Value::Number(-right))
             }
             TokenType::Bang => {
-                return Some(Value::Boolean(!self.is_truthy(&value)));
+                return Ok(Value::Boolean(!self.is_truthy(&value)));
             }
-            _ => { None }
+            _ => { Ok(Value::Nil) }
         }
     }
 
-    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Option<Value>
+    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Self::VisitResult
     {
         match operator {
             TokenType::Plus => {
@@ -79,70 +89,70 @@ impl AstVisitor for Interpreter
 
                 match (left, right) {
                     (Value::Number(left), Value::Number(right)) => {
-                        return Some(Value::Number(left + right));
+                        return Ok(Value::Number(left + right));
                     }
                     (Value::String(left), Value::String(right)) => {
-                        return Some(Value::String(format!("{}{}", left, right)));
+                        return Ok(Value::String(format!("{}{}", left, right)));
                     }
-                    _ => { None }
+                    _ => { Ok(Value::Nil) }
                 }
             }
 
             TokenType::Minus => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Number(left - right))
+                Ok(Value::Number(left - right))
             }
 
             TokenType::Star => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Number(left * right))
+                Ok(Value::Number(left * right))
             }
 
             TokenType::Slash => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Number(left / right))
+                Ok(Value::Number(left / right))
             }
 
             TokenType::Greater => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Boolean(left > right))
+                Ok(Value::Boolean(left > right))
             }
 
             TokenType::Less => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Boolean(left < right))
+                Ok(Value::Boolean(left < right))
             }
 
             TokenType::GreaterEqual => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Boolean(left >= right))
+                Ok(Value::Boolean(left >= right))
             }
 
             TokenType::LessEqual => {
                 let left = self.evaluate(left).unwrap().as_number().unwrap();
                 let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Some(Value::Boolean(left <= right))
+                Ok(Value::Boolean(left <= right))
             }
 
             TokenType::EqualEqual => {
                 let left = self.evaluate(left).unwrap();
                 let right = self.evaluate(right).unwrap();
-                Some(Value::Boolean(self.is_equal(&left, &right)))
+                Ok(Value::Boolean(self.is_equal(&left, &right)))
             }
 
             TokenType::BangEqual => {
                 let left = self.evaluate(left).unwrap();
                 let right = self.evaluate(right).unwrap();
-                Some(Value::Boolean(!self.is_equal(&left, &right)))
+                Ok(Value::Boolean(!self.is_equal(&left, &right)))
             }
 
-            _ => { None }
+            _ => { Ok(Value::Nil) }
         }
 
         

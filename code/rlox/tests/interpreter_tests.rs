@@ -2,7 +2,7 @@
 extern crate assert_float_eq;
 
 use rlox::scanner::{Scanner, Token, TokenType, TokenError};
-use rlox::parser::{Expression, Value};
+use rlox::ast::{Expression, Value};
 use rlox::interpreter::Interpreter;
 use std::result;
 use assert_float_eq::assert_float_absolute_eq;
@@ -217,3 +217,17 @@ fn evaluate_binary_not_equal_for_string() {
     let result = interpreter.evaluate(&expression).unwrap();
     assert_eq!(result.as_boolean().unwrap(), true);
 }
+
+// #[test]
+// fn evaluate_code_that_fails() {
+//     let mut interpreter = Interpreter::new();
+    
+//     let expression = Expression::Unary(
+//         TokenType::Minus,
+//         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
+
+//     );
+
+//     let result: Result<Value, InterpreterError> = interpreter.evaluate(&expression);
+//     assert!(result.is_err());
+// }
