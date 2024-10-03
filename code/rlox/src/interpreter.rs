@@ -98,75 +98,62 @@ impl AstVisitor for Interpreter
 
     fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Self::VisitResult
     {
-        match operator {
-            TokenType::Plus => {
-                
-                let left: Value = self.evaluate(left).unwrap();
-                let right: Value = self.evaluate(right).unwrap();
+        let left = self.evaluate(left).unwrap();
+        let right: Value = self.evaluate(right).unwrap();
 
-                match (left, right) {
+        match operator {
+            TokenType::Plus => {                                
+                match (left.clone(), right.clone()) {
                     (Value::Number(left), Value::Number(right)) => {
                         return Ok(Value::Number(left + right));
                     }
                     (Value::String(left), Value::String(right)) => {
                         return Ok(Value::String(format!("{}{}", left, right)));
                     }
-                    _ => { Ok(Value::Nil) }
+                    _ => { Err(Box::new(InterpreterError { message: format!("Operators must be two numebrs or two strings - found {} and {} instead", left, right) })) }
                 }
             }
 
             TokenType::Minus => {
-                let left = self.evaluate(left).unwrap();
-                let right = self.evaluate(right).unwrap();
-                let (left_number, right_number) = check_number_operands(TokenType::Minus, &left, &right)?;
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
                 Ok(Value::Number(left_number - right_number))
             }
 
             TokenType::Star => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Number(left * right))
+                let (left_number, right_number) = get_number_operands(TokenType::Star, &left, &right)?;
+                Ok(Value::Number(left_number * right_number))
             }
 
             TokenType::Slash => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Number(left / right))
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Number(left_number / right_number))
             }
 
             TokenType::Greater => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Boolean(left > right))
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Boolean(left_number > right_number))
             }
 
             TokenType::Less => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Boolean(left < right))
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Boolean(left_number < right_number))
             }
 
             TokenType::GreaterEqual => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Boolean(left >= right))
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Boolean(left_number >= right_number))
             }
 
             TokenType::LessEqual => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Boolean(left <= right))
+                let (left_number, right_number) = get_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Boolean(left_number <= right_number))
             }
 
-            TokenType::EqualEqual => {
-                let left = self.evaluate(left).unwrap();
-                let right = self.evaluate(right).unwrap();
+            TokenType::EqualEqual => {                
                 Ok(Value::Boolean(self.is_equal(&left, &right)))
             }
 
             TokenType::BangEqual => {
-                let left = self.evaluate(left).unwrap();
-                let right = self.evaluate(right).unwrap();
                 Ok(Value::Boolean(!self.is_equal(&left, &right)))
             }
 
@@ -175,10 +162,9 @@ impl AstVisitor for Interpreter
     }
 }
 
-fn check_number_operands(minus: TokenType, left: &Value, right: &Value) -> Result<(f64, f64), InterpreterError> {
+fn get_number_operands(minus: TokenType, left: &Value, right: &Value) -> Result<(f64, f64), InterpreterError> {
     match (left, right) {
         (Value::Number(left), Value::Number(right)) => Ok((*left, *right)),
-        _ => Err(InterpreterError { 
-            message: format!("Binary operator {:?} is not defined for {} and {}", minus, left, right) })
+        _ => Err(InterpreterError { message: format!("Binary operator {:?} is not defined for {} and {}", minus, left, right) })
     }    
 }

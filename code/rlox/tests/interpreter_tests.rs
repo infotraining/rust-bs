@@ -1,10 +1,9 @@
 #[macro_use]
 extern crate assert_float_eq;
 
-use rlox::scanner::{Scanner, Token, TokenType, TokenError};
-use rlox::ast::{AstResult, Expression, Value, ValueError};
-use rlox::interpreter::{EvaluationResult, Interpreter, InterpreterError};
-use std::result;
+use rlox::scanner::{TokenType};
+use rlox::ast::{AstResult, Expression, Value};
+use rlox::interpreter::{Interpreter, InterpreterError};
 use assert_float_eq::assert_float_absolute_eq;
 
 
@@ -253,6 +252,24 @@ fn evaluation_of_binary_minus_for_operands_that_are_not_numbers() {
         Err(e) => {
             let error = e.downcast_ref::<InterpreterError>().unwrap();
             assert_eq!(error.to_string(), "Binary operator Minus is not defined for Number(2) and String(Hello)");
+        }
+    }
+}
+
+#[test]
+fn evaluation_of_binary_plus_for_operands_that_are_not_numbers() {
+    let mut interpreter = Interpreter::new();
+    let expression = Expression::Binary(
+        Box::new(Expression::Literal(Value::Number(2.0))),
+        TokenType::Plus,
+        Box::new(Expression::Literal(Value::Boolean(true))),
+    );
+    let result: AstResult<Value> = interpreter.evaluate(&expression);
+    match result {
+        Ok(_) => panic!("Expected an error"),
+        Err(e) => {
+            let error = e.downcast_ref::<InterpreterError>().unwrap();
+            assert_eq!(error.to_string(), "Operators must be two numebrs or two strings - found Number(2) and Boolean(true) instead");
         }
     }
 }
