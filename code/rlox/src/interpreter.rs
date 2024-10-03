@@ -1,16 +1,32 @@
-use crate::ast::{Value, Expression, AstVisitor, AstResult, accept_visitor};
+use crate::ast::{accept_visitor, AstResult, AstVisitor, Expression, Value, ValueError};
 use crate::scanner::TokenType;
 
 
 #[derive(Debug, Clone)]
 pub struct InterpreterError
 {
-    message: String,
-    line: i32,
-    column: i32
+    pub message: String
 }
 
-type EvaluationResult = Result<Value, InterpreterError>;
+impl std::error::Error for InterpreterError {}
+
+impl std::fmt::Display for InterpreterError
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
+    {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl From<ValueError> for InterpreterError
+{
+    fn from(error: ValueError) -> Self
+    {
+        InterpreterError { message: error.message }
+    }
+}
+
+pub type EvaluationResult = Result<Value, InterpreterError>;
 
 pub struct Interpreter
 {
@@ -65,11 +81,12 @@ impl AstVisitor for Interpreter
     
     fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Self::VisitResult {
         
-        let value = self.evaluate(expression).unwrap();
+        let value = 
+            self.evaluate(expression)?;
         
         match operator {
             TokenType::Minus => {
-                let right = value.as_number().unwrap();
+                let right = value.as_number().map_err(|e| InterpreterError { message: format!("Unary operator - is not defined for {}", e.current_value) })?;
                 Ok(Value::Number(-right))
             }
             TokenType::Bang => {
@@ -99,9 +116,10 @@ impl AstVisitor for Interpreter
             }
 
             TokenType::Minus => {
-                let left = self.evaluate(left).unwrap().as_number().unwrap();
-                let right = self.evaluate(right).unwrap().as_number().unwrap();
-                Ok(Value::Number(left - right))
+                let left = self.evaluate(left).unwrap();
+                let right = self.evaluate(right).unwrap();
+                let (left_number, right_number) = check_number_operands(TokenType::Minus, &left, &right)?;
+                Ok(Value::Number(left_number - right_number))
             }
 
             TokenType::Star => {
@@ -153,8 +171,14 @@ impl AstVisitor for Interpreter
             }
 
             _ => { Ok(Value::Nil) }
-        }
-
-        
+        }        
     }
+}
+
+fn check_number_operands(minus: TokenType, left: &Value, right: &Value) -> Result<(f64, f64), InterpreterError> {
+    match (left, right) {
+        (Value::Number(left), Value::Number(right)) => Ok((*left, *right)),
+        _ => Err(InterpreterError { 
+            message: format!("Binary operator {:?} is not defined for {} and {}", minus, left, right) })
+    }    
 }

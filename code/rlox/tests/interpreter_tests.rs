@@ -2,8 +2,8 @@
 extern crate assert_float_eq;
 
 use rlox::scanner::{Scanner, Token, TokenType, TokenError};
-use rlox::ast::{Expression, Value};
-use rlox::interpreter::Interpreter;
+use rlox::ast::{AstResult, Expression, Value, ValueError};
+use rlox::interpreter::{EvaluationResult, Interpreter, InterpreterError};
 use std::result;
 use assert_float_eq::assert_float_absolute_eq;
 
@@ -218,16 +218,41 @@ fn evaluate_binary_not_equal_for_string() {
     assert_eq!(result.as_boolean().unwrap(), true);
 }
 
-// #[test]
-// fn evaluate_code_that_fails() {
-//     let mut interpreter = Interpreter::new();
+#[test]
+fn evaluate_code_that_fails() {
+    let mut interpreter = Interpreter::new();
     
-//     let expression = Expression::Unary(
-//         TokenType::Minus,
-//         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
+    let expression = Expression::Unary(
+        TokenType::Minus,
+        Box::new(Expression::Literal(Value::String("Hello".to_string()))),
 
-//     );
+    );
 
-//     let result: Result<Value, InterpreterError> = interpreter.evaluate(&expression);
-//     assert!(result.is_err());
-// }
+    let result: AstResult<Value> = interpreter.evaluate(&expression);
+    
+    match result {
+        Ok(_) => panic!("Expected an error"),
+        Err(e) => {
+            let error = e.downcast_ref::<InterpreterError>().unwrap();
+            assert_eq!(error.to_string(), "Unary operator - is not defined for String(Hello)");
+        }
+    }
+}
+
+#[test]
+fn evaluation_of_binary_minus_for_operands_that_are_not_numbers() {
+    let mut interpreter = Interpreter::new();
+    let expression = Expression::Binary(
+        Box::new(Expression::Literal(Value::Number(2.0))),
+        TokenType::Minus,
+        Box::new(Expression::Literal(Value::String("Hello".to_string()))),
+    );
+    let result: AstResult<Value> = interpreter.evaluate(&expression);
+    match result {
+        Ok(_) => panic!("Expected an error"),
+        Err(e) => {
+            let error = e.downcast_ref::<InterpreterError>().unwrap();
+            assert_eq!(error.to_string(), "Binary operator Minus is not defined for Number(2) and String(Hello)");
+        }
+    }
+}

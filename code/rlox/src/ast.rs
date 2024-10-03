@@ -1,4 +1,7 @@
-use crate::scanner::TokenType;
+
+use std::fmt;
+
+use crate::{interpreter::InterpreterError, scanner::TokenType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -8,11 +11,36 @@ pub enum Value {
     Nil,
 }
 
-impl Value {
-    pub fn as_number(&self) -> Option<f64> {
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Value::Number(n) => { Some(*n) }
-            _ => { None }
+            Value::Number(n) => { write!(f, "Number({})", n) }
+            Value::String(s) => { write!(f, "String({})", s) }
+            Value::Boolean(b) => { write!(f, "Boolean({})", b) }
+            Value::Nil => { write!(f, "nil") }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ValueError {
+    pub message: String,
+    pub current_value: String 
+}
+
+impl std::error::Error for ValueError {}
+
+impl fmt::Display for ValueError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Value {
+    pub fn as_number(&self) -> Result<f64, ValueError> {
+        match self {
+            Value::Number(n) => { Ok(*n) }
+            _ => { Err(ValueError{message: format!("Double expected - found {} instead", self), current_value: format!{"{}", self} }) }
         }
     }
 
