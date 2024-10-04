@@ -2,6 +2,9 @@ use std::fmt;
 
 use crate::scanner::TokenType;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/// Value
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(f64),
@@ -69,7 +72,10 @@ impl Value {
     }
 }
 
-#[derive(Debug)]
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/// Expression
+
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Literal(Value),
     Binary(Box<Expression>, TokenType, Box<Expression>),
@@ -108,6 +114,33 @@ pub trait ExpressionVisitor {
             Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
 
             Expression::Grouping(expression) => visitor.visit_grouping(expression),
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/// Statement
+
+#[derive(Debug, PartialEq)]
+pub enum Statement {
+    ExpressionStmt(Expression),
+    PrintStmt(Expression),
+}
+
+pub trait StatementVisitor {
+    type VisitResult;
+
+    fn visit_expression_stmt(&mut self, expression: &Expression) -> Self::VisitResult;
+    fn visit_print_stmt(&mut self, expression: &Expression) -> Self::VisitResult;
+
+    fn accept_visitor<V: StatementVisitor>(
+        visitor: &mut V,
+        statement: &Statement,
+    ) -> V::VisitResult {
+        match statement {
+            Statement::ExpressionStmt(expression) => visitor.visit_expression_stmt(expression),
+            Statement::PrintStmt(expression) => visitor.visit_print_stmt(expression),
         }
     }
 }

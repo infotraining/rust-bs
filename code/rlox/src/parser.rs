@@ -1,15 +1,15 @@
 use crate::scanner::{Token, TokenType};
-use crate::ast::{Value, Expression, AstResult};
+use crate::ast::{AstResult, Expression, Statement, Value};
 
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     source: &'a str,
     tokens: Vec<Token<'a>>,
     current: usize,
 }
 
 impl<'a> Parser<'a> {
-    fn new(source: &'a str) -> Self {
+    pub fn new(source: &'a str) -> Self {
         let mut scanner = crate::scanner::Scanner::new(source);
         let scanned_tokens: Vec<Token<'a>> = scanner.scan_tokens().unwrap();
 
@@ -18,6 +18,26 @@ impl<'a> Parser<'a> {
             tokens: scanned_tokens,
             current: 0,
         }
+    }
+
+    fn statement(&mut self) -> Statement {
+        if self.match_token(&[TokenType::Print]) {
+            return self.print_statement();
+        }
+
+        return self.expression_statement();
+    }
+
+    fn print_statement(&mut self) -> Statement {
+        let expression = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after value.");
+        Statement::PrintStmt(expression)
+    }
+
+    fn expression_statement(&mut self) -> Statement {
+        let expression = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.");
+        Statement::ExpressionStmt(expression)
     }
 
     fn expression(&mut self) -> Expression {
@@ -162,6 +182,15 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Expression {
         println!("Tokens: {:#?}", self.tokens);
         return self.expression();
+    }
+
+    pub fn parse_source(&mut self) -> Vec<Statement> {
+        let mut statements = Vec::new();
+        
+        while !self.is_at_end() {
+            statements.push(self.statement());
+        }
+        return statements;
     }
 }
 
