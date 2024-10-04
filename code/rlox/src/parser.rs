@@ -302,7 +302,7 @@ mod parser_tests {
 
         assert_eq!(
             format!("{:?}", expression),
-            "Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))"
+            "Binary(Literal(Number(1.00)), Plus, Literal(Number(2.00)))"
         );
 
         assert_eq!(print_ast(&expression), "(Plus 1 2)");
@@ -328,7 +328,7 @@ mod parser_tests {
         use crate::parser::{Expression, TokenType};
         let expression = Expression::Unary(TokenType::Minus, Box::new(Expression::Literal(Value::Number(1.0))));
 
-        assert_eq!(format!("{:?}", expression), "Unary(Minus, Literal(Number(1.0)))");
+        assert_eq!(format!("{:?}", expression), "Unary(Minus, Literal(Number(1.00)))");
 
         assert_eq!(print_ast(&expression), "(Minus 1)");
     }
@@ -349,7 +349,7 @@ mod parser_tests {
                 Box::new(Expression::Literal(Value::Number(2.0))),
             )))),
         );
-        assert_eq!(format!("{:?}", expression), "Binary(Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))), Star, Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))))");
+        assert_eq!(format!("{:?}", expression), "Binary(Grouping(Binary(Literal(Number(1.00)), Plus, Literal(Number(2.00)))), Star, Grouping(Binary(Literal(Number(1.00)), Plus, Literal(Number(2.00)))))");
 
         let mut printer = AstPrinter::new();        
         
@@ -374,7 +374,7 @@ mod parser_tests {
 
         assert_eq!(
             format!("{:?}", expression),
-            "Binary(Literal(Number(1.0)), Plus, Binary(Literal(Number(2.0)), Star, Literal(Number(3.0))))"
+            "Binary(Literal(Number(1.00)), Plus, Binary(Literal(Number(2.00)), Star, Literal(Number(3.00))))"
         );
         assert_eq!(print_ast(&expression), "(Plus 1 (Star 2 3))");
     }
@@ -385,7 +385,7 @@ mod parser_tests {
         let mut parser = Parser::new(source);
         let expression = parser.parse();
 
-        assert_eq!(format!("{:?}", expression), "Unary(Minus, Grouping(Binary(Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))), Star, Grouping(Binary(Literal(Number(4.0)), Minus, Literal(Number(2.0)))))))");
+        assert_eq!(format!("{:?}", expression), "Unary(Minus, Grouping(Binary(Grouping(Binary(Literal(Number(1.00)), Plus, Literal(Number(2.00)))), Star, Grouping(Binary(Literal(Number(4.00)), Minus, Literal(Number(2.00)))))))");
         assert_eq!(
             print_ast(&expression),
             "(Minus (group (Star (group (Plus 1 2)) (group (Minus 4 2)))))"
@@ -398,7 +398,7 @@ mod parser_tests {
         let mut parser = Parser::new(source);
         let expression = parser.parse();
 
-        assert_eq!(format!("{:?}", expression), "Binary(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0))), Greater, Binary(Literal(Number(3.0)), Star, Literal(Number(4.0))))");
+        assert_eq!(format!("{:?}", expression), "Binary(Binary(Literal(Number(1.00)), Plus, Literal(Number(2.00))), Greater, Binary(Literal(Number(3.00)), Star, Literal(Number(4.00))))");
         assert_eq!(print_ast(&expression), "(Greater (Plus 1 2) (Star 3 4))");
     }
 
@@ -411,7 +411,7 @@ mod parser_tests {
 
         assert_eq!(
             format!("{:?}", expression),
-            "Binary(Literal(Number(1.0)), Plus, Binary(Literal(Number(2.0)), Star, Literal(Number(0.0)))"
+            "Binary(Literal(Number(1.0)), Plus, Binary(Literal(Number(2.00)), Star, Literal(Number(0.00)))"
         );
         assert_eq!(print_ast(&expression), "(Plus 1 (Star 2 0))");
     }

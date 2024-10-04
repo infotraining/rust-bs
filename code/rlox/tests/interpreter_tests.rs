@@ -261,7 +261,7 @@ fn evaluation_of_binary_minus_for_operands_that_are_not_numbers_returns_error() 
             let error = e.downcast_ref::<InterpreterError>().unwrap();
             assert_eq!(
                 error.to_string(),
-                "Binary operator Minus is not defined for Number(2) and String(Hello)"
+                "Binary operator Minus is not defined for Number(2.00) and String(Hello)"
             );
         }
     }
@@ -280,7 +280,7 @@ fn evaluation_of_binary_plus_for_operands_that_are_not_numbers_returns_error() {
         Ok(_) => panic!("Expected an error"),
         Err(e) => {
             let error = e.downcast_ref::<InterpreterError>().unwrap();
-            assert_eq!(error.to_string(), "Operators must be two numebrs or two strings - found Number(2) and Boolean(true) instead");
+            assert_eq!(error.to_string(), "Operators must be two numebrs or two strings - found Number(2.00) and Boolean(true) instead");
         }
     }
 }
@@ -325,7 +325,7 @@ fn interpreting_expression_prints_value_in_output() {
 
     interpreter.interpret(&expression);
 
-    assert_eq!(console_output.borrow().get_output(), "Number(11.7)");
+    assert_eq!(console_output.borrow().get_output(), "Number(11.70)");
 }
 
 #[test]
@@ -346,7 +346,7 @@ fn interpreting_incorrect_expression_prints_error_in_output() {
 }
 
 #[test]
-fn interpret_statement_expression() {
+fn interpret_print_statement() {
     // statement: print 3.14 + 2.71;
     let statements = vec![Statement::PrintStmt(Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -359,5 +359,31 @@ fn interpret_statement_expression() {
     
     interpreter.interpret_statements(&statements);
 
-    assert_eq!(console_output.borrow().get_output(), "Number(5.85)");   
+    assert_eq!(console_output.borrow().get_output(), "5.85");   
+}
+
+#[test]
+fn interpret_multiple_statements() {
+    // statements: print 3.14 + 2.71; print "Hello" + "World"; print "!";
+    let statements = vec![
+        Statement::PrintStmt(Expression::Binary(
+            Box::new(Expression::Literal(Value::Number(3.14))),
+            TokenType::Plus,
+            Box::new(Expression::Literal(Value::Number(2.71))),
+        )),
+        Statement::PrintStmt(Expression::Binary(
+            Box::new(Expression::Literal(Value::String("Hello".to_string()))),
+            TokenType::Plus,
+            Box::new(Expression::Literal(Value::String("World".to_string()))),
+        )),
+        Statement::PrintStmt(Expression::Literal(Value::String("!".to_string()))),
+    ];
+
+
+    let console_output = Rc::new(RefCell::new(ConsoleMock::new()));
+    let mut interpreter = Interpreter::new(console_output.clone());
+    
+    interpreter.interpret_statements(&statements);
+
+    assert_eq!(console_output.borrow().get_output(), "5.85HelloWorld!");
 }

@@ -5,7 +5,7 @@ use crate::scanner::TokenType;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// Value
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
     Number(f64),
     String(String),
@@ -13,17 +13,36 @@ pub enum Value {
     Nil,
 }
 
-impl fmt::Display for Value {
+impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Value::Number(n) => {
-                write!(f, "Number({})", n)
+                write!(f, "Number({:.2})", n)
             }
             Value::String(s) => {
                 write!(f, "String({})", s)
             }
             Value::Boolean(b) => {
                 write!(f, "Boolean({})", b)
+            }
+            Value::Nil => {
+                write!(f, "nil")
+            }
+        }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Number(n) => {
+                write!(f, "{}", n)
+            }
+            Value::String(s) => {
+                write!(f, "{}", s)
+            }
+            Value::Boolean(b) => {
+                write!(f, "{}", b)
             }
             Value::Nil => {
                 write!(f, "nil")
@@ -51,8 +70,8 @@ impl Value {
         match self {
             Value::Number(n) => Ok(*n),
             _ => Err(ValueError {
-                message: format!("Double expected - found {} instead", self),
-                current_value: format! {"{}", self},
+                message: format!("Double expected - found {:?} instead", self),
+                current_value: format! {"{:?}", self},
             }),
         }
     }

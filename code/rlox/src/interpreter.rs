@@ -51,7 +51,7 @@ impl Interpreter
     pub fn interpret(&mut self, expression: &Expression)
     {        
         match self.evaluate(expression) {
-            Ok(value) => { self.console.borrow_mut().write(&format!("{}", value)); }
+            Ok(value) => { self.console.borrow_mut().write(&format!("{:?}", value)); }
             Err(e) => {self.console.borrow_mut().write(&format!("ERROR: {}", e)); }
         }    
     }
@@ -138,7 +138,7 @@ impl ExpressionVisitor for Interpreter
                     (Value::String(left), Value::String(right)) => {
                         return Ok(Value::String(format!("{}{}", left, right)));
                     }
-                    _ => { Err(Box::new(InterpreterError { message: format!("Operators must be two numebrs or two strings - found {} and {} instead", left, right) })) }
+                    _ => { Err(Box::new(InterpreterError { message: format!("Operators must be two numebrs or two strings - found {:?} and {:?} instead", left, right) })) }
                 }
             }
 
@@ -215,6 +215,6 @@ impl StatementVisitor for Interpreter {
 fn get_number_operands(minus: TokenType, left: &Value, right: &Value) -> Result<(f64, f64), InterpreterError> {
     match (left, right) {
         (Value::Number(left), Value::Number(right)) => Ok((*left, *right)),
-        _ => Err(InterpreterError { message: format!("Binary operator {:?} is not defined for {} and {}", minus, left, right) })
+        _ => Err(InterpreterError { message: format!("Binary operator {:?} is not defined for {:?} and {:?}", minus, left, right) })
     }    
 }
