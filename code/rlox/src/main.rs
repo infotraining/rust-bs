@@ -1,12 +1,25 @@
+use std::{cell::RefCell, rc::Rc};
+
+use rlox::{interpreter, parser};
+
+struct TerminalConsole {}
+
+impl interpreter::Console for TerminalConsole {
+    fn write(&mut self, value: &str) {
+        println!("{}", value);
+    }
+}
+
 fn main() {
-    use rlox::scanner::Scanner;
+    let source = r#"print 2 * 3;
+                          print (9 / 3) * ((5 - 2) / 2);
+                          print "Hello" + " " + "World";"#;
+    
+    let mut parser = parser::Parser::new(source);
+    let statements = parser.parse_source();
 
-    let source = "var text = \"Text\";\r\nvar a = 4 * 3.14;";
-    let mut scanner = Scanner::new(source);
-    let tokens = scanner.scan_tokens().unwrap();
-
-
-    println!("Source:\n{}", source);
-    println!("-------------------\nTokens:\n");
-    println!("{:#?}", tokens);
+    let terminal = Rc::new(RefCell::new(TerminalConsole {}));
+    let mut interpreter = interpreter::Interpreter::new(terminal);
+    
+    interpreter.interpret_statements(&statements);
 }
