@@ -28,6 +28,11 @@ impl From<ValueError> for InterpreterError
 
 pub type EvaluationResult = Result<Value, InterpreterError>;
 
+pub trait Console
+{
+    fn write(&mut self, value: &str);
+}
+
 pub struct Interpreter
 {
 }
@@ -37,6 +42,14 @@ impl Interpreter
     pub fn new() -> Interpreter
     {
         Interpreter {}
+    }
+
+    pub fn interpret(&mut self, expression: &Expression, console: &mut impl Console)
+    {        
+        match self.evaluate(expression) {
+            Ok(value) => { console.write(&format!("{}", value)); }
+            Err(e) => {console.write(&format!("ERROR: {}", e)); }
+        }    
     }
 
     pub fn evaluate(&mut self, expression: &Expression) -> AstResult<Value>

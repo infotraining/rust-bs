@@ -3,13 +3,17 @@ extern crate assert_float_eq;
 
 use rlox::scanner::{TokenType};
 use rlox::ast::{AstResult, Expression, Value};
-use rlox::interpreter::{Interpreter, InterpreterError};
+use rlox::interpreter::{Console, Interpreter, InterpreterError};
 use assert_float_eq::assert_float_absolute_eq;
 
 
+fn create_interpreter() -> Interpreter {
+    Interpreter::new()
+}
+
 #[test]
 fn evaluate_literal() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Literal(Value::Number(3.14));
     let result = interpreter.evaluate(&expression).unwrap();
     assert_eq!(result.as_number().unwrap(), 3.14);
@@ -17,7 +21,7 @@ fn evaluate_literal() {
 
 #[test]
 fn evaluate_unary_minus() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Unary(
         TokenType::Minus,
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -28,7 +32,7 @@ fn evaluate_unary_minus() {
 
 #[test]
 fn evaluate_unary_bang() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Unary(
         TokenType::Bang,
         Box::new(Expression::Literal(Value::Boolean(false))),
@@ -39,7 +43,7 @@ fn evaluate_unary_bang() {
 
 #[test]
 fn evaluate_binary_plus_for_double() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Plus,
@@ -51,7 +55,7 @@ fn evaluate_binary_plus_for_double() {
 
 #[test]
 fn evaluate_binary_plus_for_string() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
         TokenType::Plus,
@@ -63,7 +67,7 @@ fn evaluate_binary_plus_for_string() {
 
 #[test]
 fn evaluate_binary_minus() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Minus,
@@ -75,7 +79,7 @@ fn evaluate_binary_minus() {
 
 #[test]
 fn evaluate_binary_multiplication() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Star,
@@ -87,7 +91,7 @@ fn evaluate_binary_multiplication() {
 
 #[test]
 fn evaluate_binary_division() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Slash,
@@ -99,7 +103,7 @@ fn evaluate_binary_division() {
 
 #[test]
 fn evaluate_binary_comparison_greater() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Greater,
@@ -111,7 +115,7 @@ fn evaluate_binary_comparison_greater() {
 
 #[test]
 fn evaluate_binary_comparison_less() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::Less,
@@ -123,7 +127,7 @@ fn evaluate_binary_comparison_less() {
 
 #[test]
 fn evaluate_binary_comparison_greater_equal() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::GreaterEqual,
@@ -135,7 +139,7 @@ fn evaluate_binary_comparison_greater_equal() {
 
 #[test]
 fn evaluate_binary_comparison_less_equal() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::LessEqual,
@@ -147,7 +151,7 @@ fn evaluate_binary_comparison_less_equal() {
 
 #[test]
 fn evaluate_binary_equal_for_double() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::EqualEqual,
@@ -159,7 +163,7 @@ fn evaluate_binary_equal_for_double() {
 
 #[test]
 fn evaluate_binary_equal_for_string() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
         TokenType::EqualEqual,
@@ -171,7 +175,7 @@ fn evaluate_binary_equal_for_string() {
 
 #[test]
 fn evaluate_binary_equal_for_nil() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Nil)),
         TokenType::EqualEqual,
@@ -183,7 +187,7 @@ fn evaluate_binary_equal_for_nil() {
 
 #[test]
 fn evaluate_binary_equal_for_boolean() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Boolean(true))),
         TokenType::EqualEqual,
@@ -195,7 +199,7 @@ fn evaluate_binary_equal_for_boolean() {
 
 #[test]
 fn evaluate_binary_not_equal_for_double() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
         TokenType::BangEqual,
@@ -207,7 +211,7 @@ fn evaluate_binary_not_equal_for_double() {
 
 #[test]
 fn evaluate_binary_not_equal_for_string() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
         TokenType::BangEqual,
@@ -219,7 +223,7 @@ fn evaluate_binary_not_equal_for_string() {
 
 #[test]
 fn evaluation_unary_minus_with_string_returns_error() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     
     let expression = Expression::Unary(
         TokenType::Minus,
@@ -240,7 +244,7 @@ fn evaluation_unary_minus_with_string_returns_error() {
 
 #[test]
 fn evaluation_of_binary_minus_for_operands_that_are_not_numbers_returns_error() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(2.0))),
         TokenType::Minus,
@@ -258,7 +262,7 @@ fn evaluation_of_binary_minus_for_operands_that_are_not_numbers_returns_error() 
 
 #[test]
 fn evaluation_of_binary_plus_for_operands_that_are_not_numbers_returns_error() {
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = create_interpreter();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(2.0))),
         TokenType::Plus,
@@ -272,4 +276,68 @@ fn evaluation_of_binary_plus_for_operands_that_are_not_numbers_returns_error() {
             assert_eq!(error.to_string(), "Operators must be two numebrs or two strings - found Number(2) and Boolean(true) instead");
         }
     }
+}
+
+struct ConsoleMock {
+    output: String,
+}
+
+impl ConsoleMock {
+    fn get_output(&self) -> &str {
+        &self.output
+    }
+
+    fn new() -> Self {
+        ConsoleMock {
+            output: String::new(),
+        }
+    }
+
+}
+
+impl Console for ConsoleMock {
+    
+    fn write(&mut self, value: &str) {
+        self.output.push_str(value);
+    }
+}
+
+#[test]
+fn interpreting_expression_prints_value_in_output() {
+    // expression: (3.14 + 2.71) * 2.0
+    let expression = Expression::Binary(
+        Box::new(Expression::Binary(
+            Box::new(Expression::Literal(Value::Number(3.14))),
+            TokenType::Plus,
+            Box::new(Expression::Literal(Value::Number(2.71))),
+        )),
+        TokenType::Star,
+        Box::new(Expression::Literal(Value::Number(2.0))),
+    );
+
+    let mut console_output = ConsoleMock::new();
+    let mut interpreter = Interpreter::new();
+    
+    interpreter.interpret(&expression, &mut console_output);
+
+    assert_eq!(console_output.get_output(), "Number(11.7)");
+}
+
+#[test]
+fn interpretint_incorrect_expression_prints_error_in_output()
+{
+    // expression: 3.14 + "Hello"
+    let expression = Expression::Binary(
+        Box::new(Expression::Literal(Value::Number(3.14))),
+        TokenType::Plus,
+        Box::new(Expression::Literal(Value::String("Hello".to_string()))),
+    );
+
+    let mut console_output = ConsoleMock::new();
+    let mut interpreter = Interpreter::new();
+    
+    interpreter.interpret(&expression, &mut console_output);
+
+    assert_eq!(console_output.get_output(), "ERROR: Operators must be two numebrs or two strings - found Number(3.14) and String(Hello) instead");
+
 }
