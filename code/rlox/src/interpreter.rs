@@ -1,4 +1,4 @@
-use crate::ast::{accept_visitor, AstResult, ExpressionVisitor, Expression, Value, ValueError};
+use crate::ast::{AstResult, ExpressionVisitor, Expression, Value, ValueError};
 use crate::scanner::TokenType;
 
 
@@ -54,7 +54,7 @@ impl Interpreter
 
     pub fn evaluate(&mut self, expression: &Expression) -> AstResult<Value>
     {
-        accept_visitor(self, expression)
+        <Interpreter as ExpressionVisitor>::accept_visitor(self, expression)
     }
 
     fn is_truthy(&self, value: &Value) -> bool {

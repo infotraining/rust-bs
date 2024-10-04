@@ -93,19 +93,21 @@ pub trait ExpressionVisitor {
     ) -> Self::VisitResult;
     fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Self::VisitResult;
     fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult;
-}
 
-pub fn accept_visitor<V: ExpressionVisitor>(
-    visitor: &mut V,
-    expression: &Expression,
-) -> V::VisitResult {
-    match expression {
-        Expression::Literal(value) => visitor.visit_literal(value),
+    fn accept_visitor<V: ExpressionVisitor>(
+        visitor: &mut V,
+        expression: &Expression,
+    ) -> V::VisitResult {
+        match expression {
+            Expression::Literal(value) => visitor.visit_literal(value),
 
-        Expression::Binary(left, operator, right) => visitor.visit_binary(left, operator, right),
+            Expression::Binary(left, operator, right) => {
+                visitor.visit_binary(left, operator, right)
+            }
 
-        Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
+            Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
 
-        Expression::Grouping(expression) => visitor.visit_grouping(expression),
+            Expression::Grouping(expression) => visitor.visit_grouping(expression),
+        }
     }
 }
