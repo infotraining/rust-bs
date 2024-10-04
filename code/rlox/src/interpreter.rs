@@ -1,4 +1,4 @@
-use crate::ast::{accept_visitor, AstResult, AstVisitor, Expression, Value, ValueError};
+use crate::ast::{accept_visitor, AstResult, ExpressionVisitor, Expression, Value, ValueError};
 use crate::scanner::TokenType;
 
 
@@ -79,7 +79,7 @@ impl Interpreter
     }
 }
 
-impl AstVisitor for Interpreter
+impl ExpressionVisitor for Interpreter
 {
     type VisitResult = AstResult<Value>;
 
