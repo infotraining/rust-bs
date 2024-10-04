@@ -1,4 +1,7 @@
-use crate::ast::{AstResult, ExpressionVisitor, Expression, Value, ValueError};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::ast::{AstResult, Expression, ExpressionVisitor, Statement, StatementVisitor, Value, ValueError};
 use crate::scanner::TokenType;
 
 
@@ -35,26 +38,39 @@ pub trait Console
 
 pub struct Interpreter
 {
+    console: Rc<RefCell<dyn Console>>
 }
 
 impl Interpreter
 {
-    pub fn new() -> Interpreter
+    pub fn new(console: Rc<RefCell<dyn Console>>) -> Self
     {
-        Interpreter {}
-    }
+        Interpreter { console }
+    } 
 
-    pub fn interpret(&mut self, expression: &Expression, console: &mut impl Console)
+    pub fn interpret(&mut self, expression: &Expression)
     {        
         match self.evaluate(expression) {
-            Ok(value) => { console.write(&format!("{}", value)); }
-            Err(e) => {console.write(&format!("ERROR: {}", e)); }
+            Ok(value) => { self.console.borrow_mut().write(&format!("{}", value)); }
+            Err(e) => {self.console.borrow_mut().write(&format!("ERROR: {}", e)); }
         }    
+    }
+
+    pub fn interpret_statements(&mut self, statements: &Vec<Statement>)
+    {
+        for statement in statements {
+            self.execute(statement);
+        }
+    }
+
+    fn execute(&mut self, statement: &Statement)
+    {
+        statement.accept(self);
     }
 
     pub fn evaluate(&mut self, expression: &Expression) -> AstResult<Value>
     {
-        <Interpreter as ExpressionVisitor>::accept_visitor(self, expression)
+        expression.accept(self)
     }
 
     fn is_truthy(&self, value: &Value) -> bool {
@@ -171,6 +187,28 @@ impl ExpressionVisitor for Interpreter
 
             _ => { Ok(Value::Nil) }
         }        
+    }
+}
+
+impl StatementVisitor for Interpreter {
+    type VisitResult = ();
+
+    fn visit_print_stmt(&mut self, statement: &Statement) -> Self::VisitResult {
+        if let Statement::PrintStmt(expression) = statement {
+            match self.evaluate(expression) {
+                Ok(value) => { self.console.borrow_mut().write(&format!("{}", value)); }
+                Err(e) => { println!("ERROR: {}", e); }
+            }
+        }
+    }
+
+    fn visit_expression_stmt(&mut self, statement: &Statement) -> Self::VisitResult {
+        if let Statement::ExpressionStmt(expression) = statement {
+            match self.evaluate(expression) {
+                Ok(_) => {}
+                Err(e) => { println!("ERROR: {}", e); }
+            }
+        }
     }
 }
 

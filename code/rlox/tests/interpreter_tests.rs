@@ -1,13 +1,16 @@
 #[macro_use]
 extern crate assert_float_eq;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use assert_float_eq::assert_float_absolute_eq;
-use rlox::ast::{AstResult, Expression, Value};
+use rlox::ast::{AstResult, Expression, Statement, Value};
 use rlox::interpreter::{Console, Interpreter, InterpreterError};
 use rlox::scanner::TokenType;
 
 fn create_interpreter() -> Interpreter {
-    Interpreter::new()
+    Interpreter::new(Rc::new(RefCell::new(ConsoleMock::new())))
 }
 
 #[test]
@@ -317,16 +320,16 @@ fn interpreting_expression_prints_value_in_output() {
         Box::new(Expression::Literal(Value::Number(2.0))),
     );
 
-    let mut console_output = ConsoleMock::new();
-    let mut interpreter = Interpreter::new();
+    let console_output = Rc::new(RefCell::new(ConsoleMock::new()));
+    let mut interpreter = Interpreter::new(console_output.clone());
 
-    interpreter.interpret(&expression, &mut console_output);
+    interpreter.interpret(&expression);
 
-    assert_eq!(console_output.get_output(), "Number(11.7)");
+    assert_eq!(console_output.borrow().get_output(), "Number(11.7)");
 }
 
 #[test]
-fn interpretint_incorrect_expression_prints_error_in_output() {
+fn interpreting_incorrect_expression_prints_error_in_output() {
     // expression: 3.14 + "Hello"
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -334,10 +337,27 @@ fn interpretint_incorrect_expression_prints_error_in_output() {
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
     );
 
-    let mut console_output = ConsoleMock::new();
-    let mut interpreter = Interpreter::new();
+    let console_output = Rc::new(RefCell::new(ConsoleMock::new()));
+    let mut interpreter = Interpreter::new(console_output.clone());
 
-    interpreter.interpret(&expression, &mut console_output);
+    interpreter.interpret(&expression);
 
-    assert_eq!(console_output.get_output(), "ERROR: Operators must be two numebrs or two strings - found Number(3.14) and String(Hello) instead");
+    assert_eq!(console_output.borrow().get_output(), "ERROR: Operators must be two numebrs or two strings - found Number(3.14) and String(Hello) instead");
+}
+
+#[test]
+fn interpret_statement_expression() {
+    // statement: print 3.14 + 2.71;
+    let statements = vec![Statement::PrintStmt(Expression::Binary(
+        Box::new(Expression::Literal(Value::Number(3.14))),
+        TokenType::Plus,
+        Box::new(Expression::Literal(Value::Number(2.71))),
+    ))];
+
+    let console_output = Rc::new(RefCell::new(ConsoleMock::new()));
+    let mut interpreter = Interpreter::new(console_output.clone());
+    
+    interpreter.interpret_statements(&statements);
+
+    assert_eq!(console_output.borrow().get_output(), "Number(5.85)");   
 }

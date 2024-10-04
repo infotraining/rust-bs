@@ -83,6 +83,22 @@ pub enum Expression {
     Grouping(Box<Expression>),
 }
 
+impl Expression {
+    pub fn accept<V: ExpressionVisitor>(&self, visitor: &mut V) -> V::VisitResult {
+        match self {
+            Expression::Literal(value) => visitor.visit_literal(value),
+
+            Expression::Binary(left, operator, right) => {
+                visitor.visit_binary(left, operator, right)
+            }
+
+            Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
+
+            Expression::Grouping(expression) => visitor.visit_grouping(expression),
+        }
+    }
+}
+
 pub type GenericError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 pub type AstResult<T> = Result<T, GenericError>;
@@ -100,22 +116,22 @@ pub trait ExpressionVisitor {
     fn visit_unary(&mut self, operator: &TokenType, expression: &Expression) -> Self::VisitResult;
     fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult;
 
-    fn accept_visitor<V: ExpressionVisitor>(
-        visitor: &mut V,
-        expression: &Expression,
-    ) -> V::VisitResult {
-        match expression {
-            Expression::Literal(value) => visitor.visit_literal(value),
+    // fn accept_visitor<V: ExpressionVisitor>(
+    //     visitor: &mut V,
+    //     expression: &Expression,
+    // ) -> V::VisitResult {
+    //     match expression {
+    //         Expression::Literal(value) => visitor.visit_literal(value),
 
-            Expression::Binary(left, operator, right) => {
-                visitor.visit_binary(left, operator, right)
-            }
+    //         Expression::Binary(left, operator, right) => {
+    //             visitor.visit_binary(left, operator, right)
+    //         }
 
-            Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
+    //         Expression::Unary(operator, right) => visitor.visit_unary(operator, right),
 
-            Expression::Grouping(expression) => visitor.visit_grouping(expression),
-        }
-    }
+    //         Expression::Grouping(expression) => visitor.visit_grouping(expression),
+    //     }
+    // }
 }
 
 
@@ -128,19 +144,18 @@ pub enum Statement {
     PrintStmt(Expression),
 }
 
+impl Statement {
+    pub fn accept<V: StatementVisitor>(&self, visitor: &mut V) -> V::VisitResult {
+            match self {
+                Statement::ExpressionStmt(_expression) => visitor.visit_expression_stmt(self),
+                Statement::PrintStmt(_expression) => visitor.visit_print_stmt(self),
+            }
+        }
+}
+
 pub trait StatementVisitor {
     type VisitResult;
 
-    fn visit_expression_stmt(&mut self, expression: &Expression) -> Self::VisitResult;
-    fn visit_print_stmt(&mut self, expression: &Expression) -> Self::VisitResult;
-
-    fn accept_visitor<V: StatementVisitor>(
-        visitor: &mut V,
-        statement: &Statement,
-    ) -> V::VisitResult {
-        match statement {
-            Statement::ExpressionStmt(expression) => visitor.visit_expression_stmt(expression),
-            Statement::PrintStmt(expression) => visitor.visit_print_stmt(expression),
-        }
-    }
+    fn visit_expression_stmt(&mut self, expression: &Statement) -> Self::VisitResult;
+    fn visit_print_stmt(&mut self, expression: &Statement) -> Self::VisitResult;
 }

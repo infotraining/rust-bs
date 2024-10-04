@@ -1,5 +1,5 @@
 use crate::scanner::{Token, TokenType};
-use crate::ast::{AstResult, Expression, Statement, Value};
+use crate::ast::{Expression, Statement, Value};
 
 
 pub struct Parser<'a> {
@@ -212,7 +212,7 @@ mod parser_tests {
         type VisitResult = AstResult<()>;
     
         fn visit_literal(&mut self, value: &Value) -> Self::VisitResult {
-            let literal_value = match value {
+            let _literal_value = match value {
                 Value::Number(n) => self.result.push_str(&n.to_string()),
                 Value::String(s) => self.result.push_str(&s),
                 Value::Boolean(b) => self.result.push_str(&b.to_string()),
@@ -225,9 +225,9 @@ mod parser_tests {
             self.result.push_str("(");
             self.result.push_str(&format!("{:?}", operator));
             self.result.push_str(" ");
-            Self::accept_visitor(self, left);
+            let _ = left.accept(self);
             self.result.push_str(" ");
-            Self::accept_visitor(self, right);
+            let _ = right.accept(self);
             self.result.push_str(")");
             Ok(())
         }
@@ -236,14 +236,14 @@ mod parser_tests {
             self.result.push_str("(");
             self.result.push_str(&format!("{:?}", operator));
             self.result.push_str(" ");
-            Self::accept_visitor(self, right);
+            let _ = right.accept(self);
             self.result.push_str(")");
             Ok(())
         }
     
         fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult {
             self.result.push_str("(group ");
-            Self::accept_visitor(self, expression);
+            let _ = expression.accept(self);
             self.result.push_str(")");
             Ok(())
         }
@@ -251,7 +251,8 @@ mod parser_tests {
     
     fn print_ast(expression: &Expression) -> String {
         let mut printer = AstPrinter::new();
-        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, expression);
+        
+        let _ = expression.accept(&mut printer);
         return printer.result;
     }
     
@@ -286,7 +287,7 @@ mod parser_tests {
         }
     }
 
-    use crate::ast::ExpressionVisitor;
+    use crate::ast::{AstResult, ExpressionVisitor};
 
     use super::*;
 
@@ -316,7 +317,8 @@ mod parser_tests {
         );
 
         let mut printer = AstPrinter::new();
-        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, &expression);
+        
+        let _ = expression.accept(&mut printer);
 
         assert_eq!(printer.result, "(Plus 1 2)");
     }
@@ -349,8 +351,10 @@ mod parser_tests {
         );
         assert_eq!(format!("{:?}", expression), "Binary(Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))), Star, Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))))");
 
-        let mut printer = AstPrinter::new();
-        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, &expression);
+        let mut printer = AstPrinter::new();        
+        
+        let _ = expression.accept(&mut printer);
+        
         assert_eq!(
             printer.result,
             "(Star (group (Plus 1 2)) (group (Plus 1 2)))"
