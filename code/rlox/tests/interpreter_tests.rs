@@ -8,7 +8,7 @@ use assert_float_eq::assert_float_absolute_eq;
 
 
 #[test]
-fn evaluating_literal() {
+fn evaluate_literal() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Literal(Value::Number(3.14));
     let result = interpreter.evaluate(&expression).unwrap();
@@ -16,7 +16,7 @@ fn evaluating_literal() {
 }
 
 #[test]
-fn evaluating_unary_minus() {
+fn evaluate_unary_minus() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Unary(
         TokenType::Minus,
@@ -27,7 +27,7 @@ fn evaluating_unary_minus() {
 }
 
 #[test]
-fn evaluating_unary_bang() {
+fn evaluate_unary_bang() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Unary(
         TokenType::Bang,
@@ -38,7 +38,7 @@ fn evaluating_unary_bang() {
 }
 
 #[test]
-fn evaluating_binary_plus_for_double() {
+fn evaluate_binary_plus_for_double() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -50,7 +50,7 @@ fn evaluating_binary_plus_for_double() {
 }
 
 #[test]
-fn evaluating_binary_plus_for_string() {
+fn evaluate_binary_plus_for_string() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
@@ -62,7 +62,7 @@ fn evaluating_binary_plus_for_string() {
 }
 
 #[test]
-fn evaluating_binary_minus() {
+fn evaluate_binary_minus() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -74,7 +74,7 @@ fn evaluating_binary_minus() {
 }
 
 #[test]
-fn evaluating_binary_multiplication() {
+fn evaluate_binary_multiplication() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -86,7 +86,7 @@ fn evaluating_binary_multiplication() {
 }
 
 #[test]
-fn evaluating_binary_division() {
+fn evaluate_binary_division() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -98,7 +98,7 @@ fn evaluating_binary_division() {
 }
 
 #[test]
-fn evaluating_binary_comparison_greater() {
+fn evaluate_binary_comparison_greater() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -110,7 +110,7 @@ fn evaluating_binary_comparison_greater() {
 }
 
 #[test]
-fn evaluating_binary_comparison_less() {
+fn evaluate_binary_comparison_less() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -218,7 +218,7 @@ fn evaluate_binary_not_equal_for_string() {
 }
 
 #[test]
-fn evaluate_code_that_fails() {
+fn evaluation_unary_minus_with_string_returns_error() {
     let mut interpreter = Interpreter::new();
     
     let expression = Expression::Unary(
@@ -239,7 +239,7 @@ fn evaluate_code_that_fails() {
 }
 
 #[test]
-fn evaluation_of_binary_minus_for_operands_that_are_not_numbers() {
+fn evaluation_of_binary_minus_for_operands_that_are_not_numbers_returns_error() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(2.0))),
@@ -257,7 +257,7 @@ fn evaluation_of_binary_minus_for_operands_that_are_not_numbers() {
 }
 
 #[test]
-fn evaluation_of_binary_plus_for_operands_that_are_not_numbers() {
+fn evaluation_of_binary_plus_for_operands_that_are_not_numbers_returns_error() {
     let mut interpreter = Interpreter::new();
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(2.0))),

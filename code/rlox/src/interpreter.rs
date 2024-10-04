@@ -32,7 +32,6 @@ pub struct Interpreter
 {
 }
 
-
 impl Interpreter
 {
     pub fn new() -> Interpreter
@@ -45,7 +44,7 @@ impl Interpreter
         accept_visitor(self, expression)
     }
 
-    pub fn is_truthy(&self, value: &Value) -> bool {
+    fn is_truthy(&self, value: &Value) -> bool {
         match value {
             Value::Nil => false,
             Value::Boolean(b) => { *b },
@@ -54,7 +53,7 @@ impl Interpreter
         }
     }
 
-    pub fn is_equal(&self, left: &Value, right: &Value) -> bool {
+    fn is_equal(&self, left: &Value, right: &Value) -> bool {
         match (left, right) {
             (Value::Nil, Value::Nil) => true,
             // (Value::Nil, _) => Some(Value::Boolean(false)),
