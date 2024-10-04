@@ -1,96 +1,6 @@
 use crate::scanner::{Token, TokenType};
-use crate::ast::{AstVisitor, accept_visitor, Value, Expression, AstResult};
+use crate::ast::{Value, Expression, AstResult};
 
-
-pub struct AstPrinter {
-    pub result: String,
-}
-
-impl AstPrinter {
-    pub fn new() -> Self {
-        Self {
-            result: String::new(),
-        }
-    }
-}
-
-impl AstVisitor for AstPrinter {
-    type VisitResult = AstResult<()>;
-
-    fn visit_literal(&mut self, value: &Value) -> Self::VisitResult {
-        let literal_value = match value {
-            Value::Number(n) => self.result.push_str(&n.to_string()),
-            Value::String(s) => self.result.push_str(&s),
-            Value::Boolean(b) => self.result.push_str(&b.to_string()),
-            Value::Nil => self.result.push_str("nil"),
-        };
-        Ok(())
-    }
-
-    fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Self::VisitResult {
-        self.result.push_str("(");
-        self.result.push_str(&format!("{:?}", operator));
-        self.result.push_str(" ");
-        accept_visitor(self, left);
-        self.result.push_str(" ");
-        accept_visitor(self, right);
-        self.result.push_str(")");
-        Ok(())
-    }
-
-    fn visit_unary(&mut self, operator: &TokenType, right: &Expression) -> Self::VisitResult {
-        self.result.push_str("(");
-        self.result.push_str(&format!("{:?}", operator));
-        self.result.push_str(" ");
-        accept_visitor(self, right);
-        self.result.push_str(")");
-        Ok(())
-    }
-
-    fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult {
-        self.result.push_str("(group ");
-        accept_visitor(self, expression);
-        self.result.push_str(")");
-        Ok(())
-    }
-}
-
-fn print_ast(expression: &Expression) -> String {
-    let mut printer = AstPrinter::new();
-    accept_visitor(&mut printer, expression);
-    return printer.result;
-}
-
-fn evaluate_numeric_expression(expression: &Expression) -> f64 {
-    match expression {
-        Expression::Literal(value) => match value {
-            Value::Number(n) => *n,
-            _ => panic!("Expected number, got {:?}", value),
-        },
-
-        Expression::Binary(left, operator, right) => {
-            let left = evaluate_numeric_expression(left);
-            let right = evaluate_numeric_expression(right);
-            match operator {
-                TokenType::Plus => left + right,
-                TokenType::Minus => left - right,
-                TokenType::Star => left * right,
-                TokenType::Slash => left / right,
-                _ => panic!("Unknown operator: {:?}", operator),
-            }
-        }
-
-        Expression::Unary(operator, right) => {
-            let right = evaluate_numeric_expression(right);
-            match operator {
-                TokenType::Minus => -right,
-                _ => panic!("Unknown operator: {:?}", operator),
-            }
-        }
-
-        Expression::Grouping(expression) => evaluate_numeric_expression(expression),
-    }
-}
 
 struct Parser<'a> {
     source: &'a str,
@@ -257,6 +167,98 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod parser_tests {
+    pub struct AstPrinter {
+        pub result: String,
+    }
+    
+    impl AstPrinter {
+        pub fn new() -> Self {
+            Self {
+                result: String::new(),
+            }
+        }
+    }
+    
+    impl ExpressionVisitor for AstPrinter {
+        type VisitResult = AstResult<()>;
+    
+        fn visit_literal(&mut self, value: &Value) -> Self::VisitResult {
+            let literal_value = match value {
+                Value::Number(n) => self.result.push_str(&n.to_string()),
+                Value::String(s) => self.result.push_str(&s),
+                Value::Boolean(b) => self.result.push_str(&b.to_string()),
+                Value::Nil => self.result.push_str("nil"),
+            };
+            Ok(())
+        }
+    
+        fn visit_binary(&mut self, left: &Expression, operator: &TokenType, right: &Expression) -> Self::VisitResult {
+            self.result.push_str("(");
+            self.result.push_str(&format!("{:?}", operator));
+            self.result.push_str(" ");
+            Self::accept_visitor(self, left);
+            self.result.push_str(" ");
+            Self::accept_visitor(self, right);
+            self.result.push_str(")");
+            Ok(())
+        }
+    
+        fn visit_unary(&mut self, operator: &TokenType, right: &Expression) -> Self::VisitResult {
+            self.result.push_str("(");
+            self.result.push_str(&format!("{:?}", operator));
+            self.result.push_str(" ");
+            Self::accept_visitor(self, right);
+            self.result.push_str(")");
+            Ok(())
+        }
+    
+        fn visit_grouping(&mut self, expression: &Expression) -> Self::VisitResult {
+            self.result.push_str("(group ");
+            Self::accept_visitor(self, expression);
+            self.result.push_str(")");
+            Ok(())
+        }
+    }
+    
+    fn print_ast(expression: &Expression) -> String {
+        let mut printer = AstPrinter::new();
+        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, expression);
+        return printer.result;
+    }
+    
+    fn evaluate_numeric_expression(expression: &Expression) -> f64 {
+        match expression {
+            Expression::Literal(value) => match value {
+                Value::Number(n) => *n,
+                _ => panic!("Expected number, got {:?}", value),
+            },
+    
+            Expression::Binary(left, operator, right) => {
+                let left = evaluate_numeric_expression(left);
+                let right = evaluate_numeric_expression(right);
+                match operator {
+                    TokenType::Plus => left + right,
+                    TokenType::Minus => left - right,
+                    TokenType::Star => left * right,
+                    TokenType::Slash => left / right,
+                    _ => panic!("Unknown operator: {:?}", operator),
+                }
+            }
+    
+            Expression::Unary(operator, right) => {
+                let right = evaluate_numeric_expression(right);
+                match operator {
+                    TokenType::Minus => -right,
+                    _ => panic!("Unknown operator: {:?}", operator),
+                }
+            }
+    
+            Expression::Grouping(expression) => evaluate_numeric_expression(expression),
+        }
+    }
+
+    use crate::ast::ExpressionVisitor;
+
     use super::*;
 
     #[test]
@@ -285,7 +287,7 @@ mod parser_tests {
         );
 
         let mut printer = AstPrinter::new();
-        accept_visitor(&mut printer, &expression);
+        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, &expression);
 
         assert_eq!(printer.result, "(Plus 1 2)");
     }
@@ -319,7 +321,7 @@ mod parser_tests {
         assert_eq!(format!("{:?}", expression), "Binary(Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))), Star, Grouping(Binary(Literal(Number(1.0)), Plus, Literal(Number(2.0)))))");
 
         let mut printer = AstPrinter::new();
-        accept_visitor(&mut printer, &expression);
+        <AstPrinter as ExpressionVisitor>::accept_visitor(&mut printer, &expression);
         assert_eq!(
             printer.result,
             "(Star (group (Plus 1 2)) (group (Plus 1 2)))"

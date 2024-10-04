@@ -1,11 +1,10 @@
 #[macro_use]
 extern crate assert_float_eq;
 
-use rlox::scanner::{TokenType};
+use assert_float_eq::assert_float_absolute_eq;
 use rlox::ast::{AstResult, Expression, Value};
 use rlox::interpreter::{Console, Interpreter, InterpreterError};
-use assert_float_eq::assert_float_absolute_eq;
-
+use rlox::scanner::TokenType;
 
 fn create_interpreter() -> Interpreter {
     Interpreter::new()
@@ -224,20 +223,22 @@ fn evaluate_binary_not_equal_for_string() {
 #[test]
 fn evaluation_unary_minus_with_string_returns_error() {
     let mut interpreter = create_interpreter();
-    
+
     let expression = Expression::Unary(
         TokenType::Minus,
         Box::new(Expression::Literal(Value::String("Hello".to_string()))),
-
     );
 
     let result: AstResult<Value> = interpreter.evaluate(&expression);
-    
+
     match result {
         Ok(_) => panic!("Expected an error"),
         Err(e) => {
             let error = e.downcast_ref::<InterpreterError>().unwrap();
-            assert_eq!(error.to_string(), "Unary operator - is not defined for String(Hello)");
+            assert_eq!(
+                error.to_string(),
+                "Unary operator - is not defined for String(Hello)"
+            );
         }
     }
 }
@@ -255,7 +256,10 @@ fn evaluation_of_binary_minus_for_operands_that_are_not_numbers_returns_error() 
         Ok(_) => panic!("Expected an error"),
         Err(e) => {
             let error = e.downcast_ref::<InterpreterError>().unwrap();
-            assert_eq!(error.to_string(), "Binary operator Minus is not defined for Number(2) and String(Hello)");
+            assert_eq!(
+                error.to_string(),
+                "Binary operator Minus is not defined for Number(2) and String(Hello)"
+            );
         }
     }
 }
@@ -292,11 +296,9 @@ impl ConsoleMock {
             output: String::new(),
         }
     }
-
 }
 
 impl Console for ConsoleMock {
-    
     fn write(&mut self, value: &str) {
         self.output.push_str(value);
     }
@@ -317,15 +319,14 @@ fn interpreting_expression_prints_value_in_output() {
 
     let mut console_output = ConsoleMock::new();
     let mut interpreter = Interpreter::new();
-    
+
     interpreter.interpret(&expression, &mut console_output);
 
     assert_eq!(console_output.get_output(), "Number(11.7)");
 }
 
 #[test]
-fn interpretint_incorrect_expression_prints_error_in_output()
-{
+fn interpretint_incorrect_expression_prints_error_in_output() {
     // expression: 3.14 + "Hello"
     let expression = Expression::Binary(
         Box::new(Expression::Literal(Value::Number(3.14))),
@@ -335,9 +336,8 @@ fn interpretint_incorrect_expression_prints_error_in_output()
 
     let mut console_output = ConsoleMock::new();
     let mut interpreter = Interpreter::new();
-    
+
     interpreter.interpret(&expression, &mut console_output);
 
     assert_eq!(console_output.get_output(), "ERROR: Operators must be two numebrs or two strings - found Number(3.14) and String(Hello) instead");
-
 }
