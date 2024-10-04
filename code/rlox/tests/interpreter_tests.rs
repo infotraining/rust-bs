@@ -387,3 +387,19 @@ fn interpret_multiple_statements() {
 
     assert_eq!(console_output.borrow().get_output(), "5.85HelloWorld!");
 }
+
+
+#[test]
+fn parse_and_interpret_multiple_statements() {
+    let source_code = r#"print 3.14 + 2.71; print "Hello";"#;
+    
+    let mut parser = rlox::parser::Parser::new(source_code);
+    let statements = parser.parse_source();
+
+    let console_output = Rc::new(RefCell::new(ConsoleMock::new()));
+    let mut interpreter = Interpreter::new(console_output.clone());
+    
+    interpreter.interpret_statements(&statements);
+
+    assert_eq!(console_output.borrow().get_output(), "5.85Hello");
+}

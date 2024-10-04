@@ -122,6 +122,10 @@ impl<'a> Parser<'a> {
             return Expression::Literal(Value::Number(self.previous().lexeme.parse().unwrap()));
         }
 
+        if self.match_token(&[TokenType::String]) {
+            return Expression::Literal(Value::String(self.previous().lexeme.to_string()));
+        }
+
         if self.match_token(&[TokenType::LeftParen]) {
             let expression = self.expression();
             self.consume(TokenType::RightParen, "Expect ')' after expression.");
@@ -424,5 +428,46 @@ mod parser_tests {
         let result = evaluate_numeric_expression(&expression);
 
         assert_eq!(result, -6.0);
+    }
+
+    #[test]
+    fn parse_string_literal()
+    {
+        let source = r#""Hello""#;
+        let mut parser = Parser::new(source);
+        let expression: Expression = parser.parse();
+
+        let expected_expression = Expression::Literal(Value::String("Hello".to_string()));
+
+        assert_eq!(expression, expected_expression);
+    }
+
+    #[test]
+    fn parse_print_string_literal()
+    {
+        let source = r#"print "Hello, World!";"#;
+        let mut parser = Parser::new(source);
+        let statements = parser.parse_source();
+
+        let expected_statements = vec![
+            Statement::PrintStmt(Expression::Literal(Value::String("Hello, World!".to_string())))
+        ];
+
+        assert_eq!(statements, expected_statements);
+    }
+
+    #[test]
+    fn parse_multiple_statements() {
+        let source = r#"print 1; print 2; print "Hello";"#;
+        let mut parser = Parser::new(source);
+        let statements = parser.parse_source();
+
+        let expected_statements = vec![
+            Statement::PrintStmt(Expression::Literal(Value::Number(1.0))),
+            Statement::PrintStmt(Expression::Literal(Value::Number(2.0))),
+            Statement::PrintStmt(Expression::Literal(Value::String("Hello".to_string()))),
+        ];
+
+        assert_eq!(statements, expected_statements);
     }
 }
