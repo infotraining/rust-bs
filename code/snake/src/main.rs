@@ -42,7 +42,7 @@ impl<'a> Snake<'a> {
         &self.segments[0]
     }
 
-    pub fn crawl(&mut self, direction: Direction) {
+    pub fn move_to(&mut self, direction: Direction) {
         let Point(x, y) = *self.head();
 
         let new_head = match direction {
@@ -109,6 +109,7 @@ impl Board {
     pub fn height(&self) -> u32 {
         return self._height;
     }
+
     pub fn add_apple(&mut self, apple: Point) {
         self._apples.push(apple);
     }
@@ -125,6 +126,29 @@ impl Board {
         false
     }
 }
+
+// pub struct SnakeGame<'a> {
+//     board: Box<Board>,
+//     snake: Snake<'a>
+// }
+
+// impl<'a> SnakeGame<'a> {
+//     pub fn new(width: u32, height: u32) -> SnakeGame<'a> {
+//         let mut board = Box::new(Board::new(width, height));
+//         let mut snake = Snake::new(vec![(width / 2, height / 2), (width / 2, height / 2 + 1)]);
+//         snake.set_board(&mut board);
+        
+//         let mut game = SnakeGame {
+//             board,
+//             snake
+//         };
+//         game
+//     }
+
+//     pub fn snake(&self) -> &Snake {
+//         &self.snake
+//     }
+// }
 
 #[cfg(test)]
 mod snake_tests {
@@ -154,7 +178,7 @@ mod snake_tests {
         #[case] direction: Direction,
         #[case] expected_snake: Snake,
     ) {
-        snake.crawl(direction);
+        snake.move_to(direction);
         assert_eq!(snake, expected_snake);
     }
 
@@ -173,7 +197,7 @@ mod snake_tests {
 
         assert!(snake.is_alive());
 
-        snake.crawl(direction);
+        snake.move_to(direction);
 
         assert!(!snake.is_alive());
     }
@@ -185,7 +209,7 @@ mod snake_tests {
         let mut snake = Snake::new(vec![(5, 5), (5, 6), (5, 7)]);
         snake.set_board(&mut board);
 
-        snake.crawl(Direction::Up);
+        snake.move_to(Direction::Up);
         
         assert_eq!(snake, Snake::new(vec![(5, 4), (5, 5), (5, 6), (5, 7)]));
         assert_eq!(board.apples().len(), 0);
@@ -204,6 +228,23 @@ mod board_tests {
         assert_eq!(board.height(), 20);
     }
 }
+
+// #[cfg(test)]
+// mod snake_game_tests {
+//     use crate::Snake;
+
+    
+//     #[test]
+//     fn when_game_starts_snake_is_in_the_middle_of_the_board()
+//     {
+//         let (widtf, height) = (20, 10);
+
+//         let mut game = SnakeGame::new(width, height);
+
+//         assert_eq!(game.snake().segments(), vec![(10, 5), (10, 6)]);
+        
+//     }
+// }
 
 fn main() {
     println!("Hello, world!");
