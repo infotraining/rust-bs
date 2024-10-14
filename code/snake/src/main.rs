@@ -119,28 +119,25 @@ impl Board {
     }
 }
 
-// pub struct SnakeGame<'a> {
-//     board: Box<Board>,
-//     snake: Snake<'a>
-// }
+pub struct SnakeGame {
+    board: Board,
+    snake: Snake
+}
 
-// impl<'a> SnakeGame<'a> {
-//     pub fn new(width: u32, height: u32) -> SnakeGame<'a> {
-//         let mut board = Box::new(Board::new(width, height));
-//         let mut snake = Snake::new(vec![(width / 2, height / 2), (width / 2, height / 2 + 1)]);
-//         snake.set_board(&mut board);
+impl SnakeGame {
+    pub fn new(width: u32, height: u32) -> SnakeGame {    
+        let game = SnakeGame {
+            board : Board::new(width, height),
+            snake : Snake::new(vec![(width / 2, height / 2), (width / 2, height / 2 + 1)])
+        };
 
-//         let mut game = SnakeGame {
-//             board,
-//             snake
-//         };
-//         game
-//     }
+        game
+    }
 
-//     pub fn snake(&self) -> &Snake {
-//         &self.snake
-//     }
-// }
+    pub fn snake(&self) -> &Snake {
+        &self.snake
+    }
+}
 
 #[cfg(test)]
 mod snake_tests {
@@ -182,7 +179,7 @@ mod snake_tests {
     #[case(vec![(19, 5)], Direction::Right)]
     fn snake_dies_when_hits_the_wall(
         mut board: Board,
-        #[case] mut segments: Vec<(u32, u32)>,
+        #[case] segments: Vec<(u32, u32)>,
         #[case] direction: Direction,
     ) {
         let mut snake = Snake::new(segments);
@@ -220,21 +217,32 @@ mod board_tests {
     }
 }
 
-// #[cfg(test)]
-// mod snake_game_tests {
-//     use crate::Snake;
+#[cfg(test)]
+mod snake_game_tests {
+    use crate::{Snake, SnakeGame};
 
-//     #[test]
-//     fn when_game_starts_snake_is_in_the_middle_of_the_board()
-//     {
-//         let (widtf, height) = (20, 10);
+    #[test]
+    fn when_game_starts_snake_is_in_the_middle_of_the_board()
+    {
+        let (width, height) = (20, 10);
 
-//         let mut game = SnakeGame::new(width, height);
+        let game = SnakeGame::new(width, height);
 
-//         assert_eq!(game.snake().segments(), vec![(10, 5), (10, 6)]);
+        assert_eq!(game.snake(), &Snake::new(vec![(10, 5), (10, 6)]));
 
-//     }
-// }
+    }
+
+    #[test]
+    fn when_game_starts_snake_is_alive()
+    {
+        let (width, height) = (20, 10);
+
+        let game = SnakeGame::new(width, height);
+
+        assert_eq!(game.snake().is_alive(), true);
+
+    }
+}
 
 fn main() {
     println!("Hello, world!");
