@@ -19,18 +19,16 @@ pub enum Direction {
 }
 
 #[derive(Debug)]
-pub struct Snake<'a> {
+pub struct Snake {
     pub segments: Vec<Point>,
-    _board: Option<&'a mut Board>,
-    is_alive_: bool,
+    _is_alive: bool,
 }
 
-impl<'a> Snake<'a> {
-    pub fn new(segments: Vec<(u32, u32)>) -> Snake<'a> {
+impl Snake {
+    pub fn new(segments: Vec<(u32, u32)>) -> Snake {
         let mut snake = Snake {
             segments: Vec::new(),
-            _board: None,
-            is_alive_: true,
+            _is_alive: true,
         };
         for s in segments {
             snake.segments.push(Point(s.0, s.1));
@@ -42,7 +40,7 @@ impl<'a> Snake<'a> {
         &self.segments[0]
     }
 
-    pub fn move_to(&mut self, direction: Direction) {
+    pub fn move_to(&mut self, direction: Direction, board: &mut Board) {
         let Point(x, y) = *self.head();
 
         let new_head = match direction {
@@ -53,34 +51,28 @@ impl<'a> Snake<'a> {
         };
 
         self.segments.insert(0, new_head.clone());
-       
-        if let Some(ref mut board ) = self._board {
-            if new_head.x() == board.width()
+
+        if new_head.x() == board.width()
             || new_head.y() == board.height()
             || new_head.x() == 0
             || new_head.y() == 0
-            {
-                self.is_alive_ = false;
-            }
+        {
+            self._is_alive = false;
+        }
 
-            if board.try_to_eat_apple(new_head) {
-                return;
-            }
+        if board.try_to_eat_apple(new_head) {
+            return;
         }
 
         self.segments.pop();
     }
 
     pub fn is_alive(&self) -> bool {
-        self.is_alive_
-    }
-
-    pub fn set_board(&mut self, board: &'a mut Board) {
-        self._board = Some(board);
+        self._is_alive
     }
 }
 
-impl PartialEq for Snake<'_> {
+impl PartialEq for Snake {
     fn eq(&self, other: &Self) -> bool {
         self.segments == other.segments
     }
@@ -118,7 +110,7 @@ impl Board {
         &self._apples
     }
 
-    pub fn try_to_eat_apple(&mut self, point: Point) -> bool {        
+    pub fn try_to_eat_apple(&mut self, point: Point) -> bool {
         if let Some(index) = self._apples.iter().position(|&p| p == point) {
             self._apples.remove(index);
             return true;
@@ -137,7 +129,7 @@ impl Board {
 //         let mut board = Box::new(Board::new(width, height));
 //         let mut snake = Snake::new(vec![(width / 2, height / 2), (width / 2, height / 2 + 1)]);
 //         snake.set_board(&mut board);
-        
+
 //         let mut game = SnakeGame {
 //             board,
 //             snake
@@ -174,11 +166,12 @@ mod snake_tests {
     #[case(Snake::new(vec![(5, 5), (5, 6), (5, 7)]), Direction::Up, Snake::new(vec![(5, 4), (5, 5), (5, 6)]))]
     #[case(Snake::new(vec![(5, 7), (5, 6), (5, 5)]), Direction::Down, Snake::new(vec![(5, 8), (5, 7), (5, 6)]))]
     fn snake_moves_in_given_direction(
+        mut board: Board,
         #[case] mut snake: Snake,
         #[case] direction: Direction,
         #[case] expected_snake: Snake,
     ) {
-        snake.move_to(direction);
+        snake.move_to(direction, &mut board);
         assert_eq!(snake, expected_snake);
     }
 
@@ -193,11 +186,10 @@ mod snake_tests {
         #[case] direction: Direction,
     ) {
         let mut snake = Snake::new(segments);
-        snake.set_board(&mut board);
 
         assert!(snake.is_alive());
 
-        snake.move_to(direction);
+        snake.move_to(direction, &mut board);
 
         assert!(!snake.is_alive());
     }
@@ -207,10 +199,9 @@ mod snake_tests {
         board.add_apple(Point(5, 4));
 
         let mut snake = Snake::new(vec![(5, 5), (5, 6), (5, 7)]);
-        snake.set_board(&mut board);
 
-        snake.move_to(Direction::Up);
-        
+        snake.move_to(Direction::Up, &mut board);
+
         assert_eq!(snake, Snake::new(vec![(5, 4), (5, 5), (5, 6), (5, 7)]));
         assert_eq!(board.apples().len(), 0);
     }
@@ -233,7 +224,6 @@ mod board_tests {
 // mod snake_game_tests {
 //     use crate::Snake;
 
-    
 //     #[test]
 //     fn when_game_starts_snake_is_in_the_middle_of_the_board()
 //     {
@@ -242,7 +232,7 @@ mod board_tests {
 //         let mut game = SnakeGame::new(width, height);
 
 //         assert_eq!(game.snake().segments(), vec![(10, 5), (10, 6)]);
-        
+
 //     }
 // }
 
