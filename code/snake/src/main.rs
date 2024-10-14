@@ -11,6 +11,7 @@ impl Point {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction {
     Left,
     Right,
@@ -21,6 +22,7 @@ pub enum Direction {
 #[derive(Debug)]
 pub struct Snake {
     pub segments: Vec<Point>,
+    _direction: Direction,
     _is_alive: bool,
 }
 
@@ -28,6 +30,7 @@ impl Snake {
     pub fn new(segments: Vec<(u32, u32)>) -> Snake {
         let mut snake = Snake {
             segments: Vec::new(),
+            _direction: Direction::Up,
             _is_alive: true,
         };
         for s in segments {
@@ -41,6 +44,8 @@ impl Snake {
     }
 
     pub fn move_to(&mut self, direction: Direction, board: &mut Board) {
+        self._direction = direction;
+        
         let Point(x, y) = *self.head();
 
         let new_head = match direction {
@@ -49,6 +54,7 @@ impl Snake {
             Direction::Up => Point(x, y - 1),
             Direction::Down => Point(x, y + 1),
         };
+
 
         self.segments.insert(0, new_head.clone());
 
@@ -69,6 +75,10 @@ impl Snake {
 
     pub fn is_alive(&self) -> bool {
         self._is_alive
+    }
+
+    pub fn direction(&self) -> Direction {
+        self._direction
     }
 }
 
@@ -170,6 +180,7 @@ mod snake_tests {
     ) {
         snake.move_to(direction, &mut board);
         assert_eq!(snake, expected_snake);
+        assert_eq!(snake.direction(), direction);
     }
 
     #[rstest]
@@ -219,7 +230,7 @@ mod board_tests {
 
 #[cfg(test)]
 mod snake_game_tests {
-    use crate::{Snake, SnakeGame};
+    use crate::{Direction, Snake, SnakeGame};
 
     #[test]
     fn when_game_starts_snake_is_in_the_middle_of_the_board()
@@ -240,6 +251,17 @@ mod snake_game_tests {
         let game = SnakeGame::new(width, height);
 
         assert_eq!(game.snake().is_alive(), true);
+
+    }
+
+    #[test]
+    fn when_game_starts_snake_is_directed_up()
+    {
+        let (width, height) = (20, 10);
+
+        let game = SnakeGame::new(width, height);
+
+        assert_eq!(game.snake().direction(), Direction::Up);
 
     }
 }
