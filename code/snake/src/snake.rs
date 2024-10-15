@@ -47,7 +47,7 @@ impl Snake {
 
     pub fn move_to(&mut self, direction: Direction, board: &mut Board) {
         self._direction = direction;
-        
+
         let Point(x, y) = *self.head();
 
         let new_head = match direction {
@@ -57,16 +57,11 @@ impl Snake {
             Direction::Down => Point(x, y + 1),
         };
 
-
-        self.segments.insert(0, new_head.clone());
-
-        if new_head.x() == board.width()
-            || new_head.y() == board.height()
-            || new_head.x() == 0
-            || new_head.y() == 0
-        {
+        if self.hits_the_wall(new_head, board) || self.eats_itself(new_head) {
             self._is_alive = false;
         }
+
+        self.segments.insert(0, new_head.clone());
 
         if board.try_to_eat_apple(new_head) {
             return;
@@ -75,12 +70,25 @@ impl Snake {
         self.segments.pop();
     }
 
+    fn hits_the_wall(&self, new_head: Point, board: &Board) -> bool {
+        let Point(x, y) = new_head;
+        x == board.width() - 1 || y == board.height() - 1 || x == 0 || y == 0
+    }
+
+    fn eats_itself(&self, new_head: Point) -> bool {
+        self.segments.contains(&new_head)
+    }
+
     pub fn is_alive(&self) -> bool {
         self._is_alive
     }
 
     pub fn direction(&self) -> Direction {
         self._direction
+    }
+
+    pub fn segments(&self) -> &Vec<Point> {
+        &self.segments
     }
 }
 
@@ -93,7 +101,7 @@ impl PartialEq for Snake {
 #[cfg(test)]
 mod snake_tests {
     use crate::board::Board;
-    use crate::snake::{Snake, Direction, Point};
+    use crate::snake::{Direction, Point, Snake};
     use rstest::{fixture, rstest};
 
     #[test]
@@ -126,10 +134,29 @@ mod snake_tests {
 
     #[rstest]
     #[case(vec![(10, 1)], Direction::Up)]
-    #[case(vec![(10, 9)], Direction::Down)]
+    #[case(vec![(10, 8)], Direction::Down)]
     #[case(vec![(1, 5)], Direction::Left)]
-    #[case(vec![(19, 5)], Direction::Right)]
+    #[case(vec![(18, 5)], Direction::Right)]
     fn snake_dies_when_hits_the_wall(
+        mut board: Board,
+        #[case] segments: Vec<(u32, u32)>,
+        #[case] direction: Direction,
+    ) {
+        let mut snake = Snake::new(segments);
+
+        assert!(snake.is_alive());
+
+        snake.move_to(direction, &mut board);
+
+        assert!(!snake.is_alive());
+    }
+
+    #[rstest]
+    #[case(vec![(5, 5), (5, 6), (5, 7), (4, 7), (4, 6), (4, 5)], Direction::Left)]
+    #[case(vec![(5, 5), (5, 6), (5, 7), (6, 7), (6, 6), (6, 5)], Direction::Right)]
+    #[case(vec![(5, 5), (6, 5), (7, 5), (7, 4), (6, 4), (5, 4)], Direction::Up)]
+    #[case(vec![(5, 5), (5, 6), (5, 7), (5, 4), (5, 3), (5, 2)], Direction::Down)]
+    fn snake_dies_when_eats_itself(
         mut board: Board,
         #[case] segments: Vec<(u32, u32)>,
         #[case] direction: Direction,

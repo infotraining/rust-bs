@@ -2,8 +2,10 @@ use bracket_lib::prelude::*;
 
 use crate::{
     board::Board,
-    snake::{Direction, Snake, Point},
+    snake::{Direction, Point, Snake},
 };
+
+const FRAME_DURATION: f32 = 75.0;
 
 enum GameMode {
     Menu,
@@ -16,6 +18,8 @@ pub struct SnakeGame {
     board: Board,
     snake: Snake,
     current_direction: Direction,
+    current_length: u32,
+    frame_time: f32,
 }
 
 impl SnakeGame {
@@ -24,7 +28,9 @@ impl SnakeGame {
             mode: GameMode::Menu,
             board: Board::new(80, 50),
             snake: Snake::new(vec![(40, 25), (41, 25), (42, 25)]),
-            current_direction: Direction::Right,
+            current_direction: Direction::Left,
+            current_length: 3,
+            frame_time: 0.0,
         }
     }
 
@@ -57,8 +63,10 @@ impl SnakeGame {
 
         self.board = Board::new(80, 50);
         self.snake = Snake::new(vec![(40, 25), (41, 25), (42, 25)]);
-        self.current_direction = Direction::Right;
+        self.current_direction = Direction::Left;
+        self.current_length = self.snake.segments().len() as u32;
         self.drop_apples(10);
+        self.frame_time = 0.0;
     }
 
     fn dead(&mut self, ctx: &mut BTerm) {
@@ -96,15 +104,64 @@ impl SnakeGame {
             }
         }
 
+        self.frame_time += ctx.frame_time_ms;
+
+        if self.frame_time > FRAME_DURATION {
+            self.frame_time = 0.0;
+        } else {
+            return;
+        }
+
         self.snake.move_to(self.current_direction, &mut self.board);
+
+        self.refill_apples();
 
         if !self.snake.is_alive() {
             self.dead(ctx);
         }
     }
 
+    fn refill_apples(&mut self) {
+        if self.current_length < self.snake.segments().len() as u32 {
+            self.current_length = self.snake.segments().len() as u32;
+            self.drop_apples(2);
+        }
+    }
+
     fn render_board(&self, ctx: &mut BTerm) {
-        for x in 0..self.board.width() {
+        ctx.set(
+            0,
+            0,
+            RGB::named(WHITE),
+            RGB::named(BLACK),
+            to_cp437('+'),
+        );
+
+        ctx.set(
+            self.board.width() - 1,
+            0,
+            RGB::named(WHITE),
+            RGB::named(BLACK),
+            to_cp437('+'),
+        );
+
+        ctx.set(
+            0,
+            self.board.height() - 1,
+            RGB::named(WHITE),
+            RGB::named(BLACK),
+            to_cp437('+'),
+        );
+
+        ctx.set(
+            self.board.width() - 1,
+            self.board.height() - 1,
+            RGB::named(WHITE),
+            RGB::named(BLACK),
+            to_cp437('+'),
+        );
+
+        for x in 1..self.board.width()-1 {
             ctx.set(x, 0, RGB::named(WHITE), RGB::named(BLACK), to_cp437('-'));
             ctx.set(
                 x,
@@ -115,7 +172,7 @@ impl SnakeGame {
             );
         }
 
-        for y in 0..self.board.height() {
+        for y in 1..self.board.height()-1 {
             ctx.set(0, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('|'));
             ctx.set(
                 self.board.width() - 1,

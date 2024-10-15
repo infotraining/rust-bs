@@ -11,7 +11,7 @@ fn main() -> BError {
         .with_title("Snake game")
         .build()?;
 
-    let mut game = SnakeGame::new();
+    let game = SnakeGame::new();
 
     main_loop(context, game)
 }
