@@ -1,4 +1,8 @@
 mod document;
+mod application;
+mod commands;
+mod console;
+
 
 use document::Document;
 

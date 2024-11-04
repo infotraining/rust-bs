@@ -64,7 +64,7 @@ fn document_clear_content()
 }
 
 #[fixture]
-fn document() -> Document
+pub fn document() -> Document
 {
     let mut doc = Document::new();
     doc.add_line("Line1".to_string());
