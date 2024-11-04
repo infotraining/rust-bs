@@ -3,28 +3,35 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use mockall::{Sequence};
-use rstest::rstest;
+use mockall::predicate::str::contains;
+use mockall::{Sequence, predicate::eq};
+use rstest::{fixture, rstest};
 
 use crate::document::Document;
 use crate::console::{Console, MockConsole};
 use crate::commands::{Command, MockCommand};
 
-struct Application<'a> {
+pub struct Application<'a> {
     document: &'a mut Document,
     console: &'a mut dyn Console,
     commands: HashMap<String, Rc<RefCell<dyn Command>>>,
 }
 
 impl<'a> Application<'a> {
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         loop {
-            let command_name = self.console.read_line();
-            if command_name == "exit" {
+            self.console.print_line("Enter a command: ");
+
+            let line = self.console.read_line();
+            let mut tokens: Vec<_> = line.splitn(2, ' ').collect();
+            let command_name = tokens[0].to_string();
+
+            if command_name == "Exit" {
                 break;
             }
 
             if let Some(cmd) = self.commands.get(&command_name) {
+                cmd.as_ref().borrow_mut().parse(&line);
                 cmd.as_ref().borrow_mut().execute();
             }
             else {
@@ -33,35 +40,35 @@ impl<'a> Application<'a> {
         }
     }
 
-    fn add_command(&mut self, command_name: String, command: Rc<RefCell<dyn Command>>) {
+    pub fn add_command(&mut self, command_name: String, command: Rc<RefCell<dyn Command>>) {
         self.commands.insert(command_name, command);
     }
 }
 
-struct ApplicationBuilder<'a> {
+pub struct ApplicationBuilder<'a> {
     document: Option<&'a mut Document>,
     console: Option<&'a mut dyn Console>,
 }
 
 impl<'a> ApplicationBuilder<'a> {
-    fn new() -> ApplicationBuilder<'a> {
+    pub fn new() -> ApplicationBuilder<'a> {
         ApplicationBuilder {
             document: None,
             console: None,
         }
     }
 
-    fn with_document(mut self, document: &'a mut Document) -> ApplicationBuilder<'a> {
+    pub fn with_document(mut self, document: &'a mut Document) -> ApplicationBuilder<'a> {
         self.document = Some(document);
         self
     }
 
-    fn with_console(mut self, console: &'a mut dyn Console) -> ApplicationBuilder<'a> {
+    pub fn with_console(mut self, console: &'a mut dyn Console) -> ApplicationBuilder<'a> {
         self.console = Some(console);
         self
     }
 
-    fn build(self) -> Application<'a> {
+    pub fn build(self) -> Application<'a> {
         Application {
             document: self.document.unwrap(),
             console: self.console.unwrap(),
@@ -72,12 +79,19 @@ impl<'a> ApplicationBuilder<'a> {
 
 use crate::document::document;
 
+#[fixture]
+fn mock_console() -> MockConsole {
+    let mut mock = MockConsole::new();
+    mock.expect_print_line().with(contains("Enter a command: ")).times(1..).returning(|_| ());
+    mock
+}
+
 #[rstest]
-fn application_asks_for_command(mut document: Document) {
-    let mut mock_console = MockConsole::new();
+fn application_asks_for_command(mut document: Document, mut mock_console: MockConsole) {
+    //let mut mock_console = MockConsole::new();
     mock_console
         .expect_read_line()
-        .returning(|| "exit".to_string())
+        .returning(|| "Exit".to_string())
         .times(1..);
 
     let mut app = ApplicationBuilder::new()
@@ -88,20 +102,19 @@ fn application_asks_for_command(mut document: Document) {
 }
 
 #[rstest]
-fn application_exit_exits_the_loop(mut document: Document) {
+fn application_exit_exits_the_loop(mut document: Document, mut mock_console: MockConsole) {
     let mut seq = Sequence::new();
-    let mut mock_console = MockConsole::new();
 
     mock_console
         .expect_read_line()
         .times(1)
-        .returning(|| "cmd".to_string())
+        .returning(|| "Cmd".to_string())
         .in_sequence(&mut seq);
 
     mock_console
         .expect_read_line()
         .times(1)
-        .returning(|| "exit".to_string())
+        .returning(|| "Exit".to_string())
         .in_sequence(&mut seq);
 
     mock_console.expect_print_line().times(1..).returning(|_| ());
@@ -115,20 +128,19 @@ fn application_exit_exits_the_loop(mut document: Document) {
 }
 
 #[rstest]
-fn application_executes_commands(mut document: Document) {
+fn application_executes_commands(mut document: Document, mut mock_console: MockConsole) {
     let mut seq = Sequence::new();
-    let mut mock_console = MockConsole::new();
 
     mock_console
         .expect_read_line()
         .times(2)
-        .returning(|| "cmd".to_string())
+        .returning(|| "Cmd".to_string())
         .in_sequence(&mut seq);
 
     mock_console
         .expect_read_line()
         .times(1)
-        .returning(|| "exit".to_string())
+        .returning(|| "Exit".to_string())
         .in_sequence(&mut seq);
 
     let mut app = ApplicationBuilder::new()
@@ -142,37 +154,41 @@ fn application_executes_commands(mut document: Document) {
 
         mock_cmd
             .borrow_mut()
-            .expect_execute()
-            .times(2)
+            .expect_execute()            
             .returning(|| ());
 
-        app.add_command("cmd".to_string(), mock_cmd_rc.clone());
+        mock_cmd
+            .borrow_mut()
+            .expect_parse()
+            .with(eq("Cmd"))            
+            .returning(|_| ());
+
+        app.add_command("Cmd".to_string(), mock_cmd_rc.clone());
     }
 
     app.run();
 }
 
 #[rstest]
-fn application_when_unknown_command_is_entered_message_is_printed(mut document: Document) {
+fn application_when_unknown_command_is_entered_message_is_printed(mut document: Document, mut mock_console: MockConsole) {
     let mut seq = Sequence::new();
-    let mut mock_console = MockConsole::new();
 
     let mut seq = Sequence::new();
     mock_console
         .expect_read_line()
         .times(1)
-        .returning(|| "unknown".to_string())
+        .returning(|| "Unknown".to_string())
         .in_sequence(&mut seq);
 
     mock_console
         .expect_read_line()
         .times(1)
-        .returning(|| "exit".to_string())
+        .returning(|| "Exit".to_string())
         .in_sequence(&mut seq);
 
     mock_console
         .expect_print_line()
-        .withf(|line| line.contains("Unknown command: unknown"))
+        .withf(|line| line.contains("Unknown command: Unknown"))
         .times(1)
         .returning(|_| ());
 
@@ -180,6 +196,50 @@ fn application_when_unknown_command_is_entered_message_is_printed(mut document: 
         .with_document(&mut document)
         .with_console(&mut mock_console)
         .build();
+
+    app.run();
+}
+
+#[rstest]
+fn application_parses_a_command_arguments(mut document: Document, mut mock_console: MockConsole) {
+    let mut seq = Sequence::new();
+
+    mock_console
+        .expect_read_line()
+        .times(1)
+        .returning(|| "Cmd arg1 arg2".to_string())
+        .in_sequence(&mut seq);
+
+    mock_console
+        .expect_read_line()
+        .times(1)
+        .returning(|| "Exit".to_string())
+        .in_sequence(&mut seq);
+
+    let mut app = ApplicationBuilder::new()
+        .with_document(&mut document)
+        .with_console(&mut mock_console)
+        .build();
+
+    {
+        let mock_cmd_rc: Rc<RefCell<MockCommand>> = Rc::new(RefCell::new(MockCommand::new()));
+        let mut mock_cmd = mock_cmd_rc.as_ref().borrow_mut();
+
+        mock_cmd
+            .borrow_mut()
+            .expect_parse()
+            .with(eq("Cmd arg1 arg2"))
+            .times(1)
+            .returning(|_| ());
+
+        mock_cmd
+            .borrow_mut()
+            .expect_execute()
+            .times(1)
+            .returning(|| ());
+
+        app.add_command("Cmd".to_string(), mock_cmd_rc.clone());
+    }
 
     app.run();
 }
