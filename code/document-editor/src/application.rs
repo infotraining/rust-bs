@@ -27,6 +27,9 @@ impl<'a> Application<'a> {
             if let Some(cmd) = self.commands.get(&command_name) {
                 cmd.as_ref().borrow_mut().execute();
             }
+            else {
+                self.console.print_line(&format!("Unknown command: {}", command_name));
+            }
         }
     }
 
@@ -101,6 +104,8 @@ fn application_exit_exits_the_loop(mut document: Document) {
         .returning(|| "exit".to_string())
         .in_sequence(&mut seq);
 
+    mock_console.expect_print_line().times(1..).returning(|_| ());
+
     let mut app = ApplicationBuilder::new()
         .with_document(&mut document)
         .with_console(&mut mock_console)
@@ -143,6 +148,38 @@ fn application_executes_commands(mut document: Document) {
 
         app.add_command("cmd".to_string(), mock_cmd_rc.clone());
     }
+
+    app.run();
+}
+
+#[rstest]
+fn application_when_unknown_command_is_entered_message_is_printed(mut document: Document) {
+    let mut seq = Sequence::new();
+    let mut mock_console = MockConsole::new();
+
+    let mut seq = Sequence::new();
+    mock_console
+        .expect_read_line()
+        .times(1)
+        .returning(|| "unknown".to_string())
+        .in_sequence(&mut seq);
+
+    mock_console
+        .expect_read_line()
+        .times(1)
+        .returning(|| "exit".to_string())
+        .in_sequence(&mut seq);
+
+    mock_console
+        .expect_print_line()
+        .withf(|line| line.contains("Unknown command: unknown"))
+        .times(1)
+        .returning(|_| ());
+
+    let mut app = ApplicationBuilder::new()
+        .with_document(&mut document)
+        .with_console(&mut mock_console)
+        .build();
 
     app.run();
 }
