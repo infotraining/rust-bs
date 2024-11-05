@@ -1,11 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::string::ParseError;
 
-use crate::console::{Console, MockConsole};
-use crate::document::{document, Document};
-use mockall::{automock, predicate::eq, Sequence};
-use rstest::{fixture, rstest};
+use crate::console::Console;
+use crate::document::Document;
+
+use mockall::automock;
 
 /// A command that can be executed by the application.
 #[automock]
@@ -54,7 +53,8 @@ impl Command for PrintCommand {
 mod tests_print_command {
     use crate::commands::{Command, CommandParseError, PrintCommand};
     use crate::console::MockConsole;
-    use crate::document::{document, Document};
+    use crate::document::{Document};
+    use crate::document::tests_document::document;
     use mockall::{predicate::eq, Sequence};
     use rstest::{fixture, rstest};
     use std::{cell::RefCell, rc::Rc};
@@ -169,7 +169,8 @@ impl Command for AddTextCommand {
 #[cfg(test)]
 mod tests_add_text_command {
     use crate::commands::{AddTextCommand, Command};
-    use crate::document::{document, Document};
+    use crate::document::{Document};
+    use crate::document::tests_document::document;
     use rstest::rstest;
     use std::{cell::RefCell, rc::Rc};
 
@@ -257,7 +258,8 @@ impl Command for ReplaceTextCommand {
 #[cfg(test)]
 mod tests_replace_text_command {
     use crate::commands::{ReplaceTextCommand, Command};
-    use crate::document::{document, Document};
+    use crate::document::{Document};
+    use crate::document::tests_document::document;
     use rstest::rstest;
     use std::{cell::RefCell, rc::Rc};
 
