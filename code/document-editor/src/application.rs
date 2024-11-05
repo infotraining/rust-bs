@@ -151,7 +151,7 @@ fn application_executes_commands(mock_console: Rc<RefCell<MockConsole>>) {
             .borrow_mut()
             .expect_parse()
             .with(eq("Cmd"))
-            .returning(|_| ());
+            .returning(|_| Ok(()));
 
         app.add_command("Cmd".to_string(), mock_cmd_rc.clone());
     }
@@ -225,7 +225,7 @@ fn application_parses_a_command_arguments(mock_console: Rc<RefCell<MockConsole>>
             .expect_parse()
             .with(eq("Cmd arg1 arg2"))
             .times(1)
-            .returning(|_| ());
+            .returning(|_| Ok(()));
 
         mock_cmd
             .borrow_mut()

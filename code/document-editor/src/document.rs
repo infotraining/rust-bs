@@ -1,61 +1,56 @@
-pub struct Document
-{
+pub struct Document {
     content: Vec<String>,
 }
 
-impl Document
-{
-    pub fn new() -> Document
-    {
+impl Document {
+    pub fn new() -> Document {
         Document { content: vec![] }
     }
 
-    pub fn content(&self) -> Vec<String>
-    {
+    pub fn content(&self) -> Vec<String> {
         self.content.clone()
     }
 
-    pub fn add_line(&mut self, line: String)
-    {
+    pub fn add_line(&mut self, line: String) {
         self.content.push(line);
     }
 
-    pub fn insert_line(&mut self, index: usize, line: String)
-    {
+    pub fn insert_line(&mut self, index: usize, line: String) {
         self.content.insert(index, line);
     }
 
-    pub fn clear(&mut self)
-    {
+    pub fn clear(&mut self) {
         self.content.clear();
     }
 
-    pub fn erase_line(&mut self, index: usize)
-    {
+    pub fn erase_line(&mut self, index: usize) {
         self.content.remove(index);
+    }
+
+    pub fn replace_text(&mut self, old_text: &str, new_text: &str) {
+        for line in self.content.iter_mut() {
+            *line = line.replace(old_text, new_text);
+        }
     }
 }
 
 use rstest::{fixture, rstest};
 
 #[test]
-fn document_is_empty_on_start()
-{
+fn document_is_empty_on_start() {
     let document = Document::new();
     assert_eq!(document.content(), Vec::<String>::new());
 }
 
 #[test]
-fn document_add_line()
-{
+fn document_add_line() {
     let mut document = Document::new();
     document.add_line("Hello, world!".to_string());
     assert_eq!(document.content(), vec!["Hello, world!"]);
 }
 
 #[test]
-fn document_clear_content()
-{
+fn document_clear_content() {
     let mut document = Document::new();
     document.add_line("Hello, world!".to_string());
     document.add_line("Goodbye, world!".to_string());
@@ -64,8 +59,7 @@ fn document_clear_content()
 }
 
 #[fixture]
-pub fn document() -> Document
-{
+pub fn document() -> Document {
     let mut doc = Document::new();
     doc.add_line("Line1".to_string());
     doc.add_line("Line2".to_string());
@@ -74,15 +68,25 @@ pub fn document() -> Document
 }
 
 #[rstest]
-fn document_inserting_line(mut document: Document)
-{
+fn document_inserting_line(mut document: Document) {
     document.insert_line(1, "Inserted line".to_string());
-    assert_eq!(document.content(), vec!["Line1", "Inserted line", "Line2", "Line3"]);
+    assert_eq!(
+        document.content(),
+        vec!["Line1", "Inserted line", "Line2", "Line3"]
+    );
 }
 
 #[rstest]
-fn document_erase_a_line(mut document: Document)
-{    
+fn document_erase_a_line(mut document: Document) {
     document.erase_line(1);
     assert_eq!(document.content(), vec!["Line1", "Line3"]);
+}
+
+#[rstest]
+fn document_replace_text(mut document: Document) {
+    document.replace_text("Line2", "Replaced line");
+    assert_eq!(
+        document.content(),
+        vec!["Line1", "Replaced line", "Line3"]
+    );
 }

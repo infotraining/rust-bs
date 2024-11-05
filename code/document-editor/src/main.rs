@@ -3,11 +3,7 @@ mod commands;
 mod console;
 mod document;
 
-use std::{
-    cell::RefCell,
-    io::{BufRead},
-    rc::Rc,
-};
+use std::{cell::RefCell, io::BufRead, rc::Rc};
 
 use application::ApplicationBuilder;
 use document::Document;
@@ -29,7 +25,7 @@ impl console::Console for Terminal {
 fn main() {
     let terminal = Rc::new(RefCell::new(Terminal {}));
     let doc = Rc::new(RefCell::new(Document::new()));
-    {        
+    {
         let mut app = ApplicationBuilder::new()
             .with_console(terminal.clone())
             .build();
@@ -41,6 +37,10 @@ fn main() {
         app.add_command(
             "AddText".to_string(),
             Rc::new(RefCell::new(add_text_command)),
+        );
+        app.add_command(
+            "ReplaceText".to_string(),
+            Rc::new(RefCell::new(commands::ReplaceTextCommand::new(doc.clone()))),
         );
 
         app.run();
