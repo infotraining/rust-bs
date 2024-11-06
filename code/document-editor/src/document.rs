@@ -9,8 +9,8 @@ impl Document {
         Document { content: vec![] }
     }
 
-    pub fn content(&self) -> Vec<String> {
-        self.content.clone()
+    pub fn content(&self) -> &Vec<String> {
+        &self.content
     }
 
     pub fn add_line(&mut self, line: String) {
@@ -54,14 +54,14 @@ pub(crate) mod tests_document {
     #[test]
     fn document_is_empty_on_start() {
         let document = Document::new();
-        assert_eq!(document.content(), Vec::<String>::new());
+        assert_eq!(document.content(), &Vec::<String>::new());
     }
 
     #[test]
     fn document_add_line() {
         let mut document = Document::new();
         document.add_line("Hello, world!".to_string());
-        assert_eq!(document.content(), vec!["Hello, world!"]);
+        assert_eq!(document.content(), &vec!["Hello, world!"]);
     }
 
     #[test]
@@ -70,7 +70,7 @@ pub(crate) mod tests_document {
         document.add_line("Hello, world!".to_string());
         document.add_line("Goodbye, world!".to_string());
         document.clear();
-        assert_eq!(document.content(), Vec::<String>::new());
+        assert_eq!(document.content(), &Vec::<String>::new());
     }
 
     #[fixture]
@@ -87,20 +87,20 @@ pub(crate) mod tests_document {
         document.insert_line(1, "Inserted line".to_string());
         assert_eq!(
             document.content(),
-            vec!["Line1", "Inserted line", "Line2", "Line3"]
+            &vec!["Line1", "Inserted line", "Line2", "Line3"]
         );
     }
 
     #[rstest]
     fn document_erase_a_line(mut document: Document) {
         document.erase_line(1);
-        assert_eq!(document.content(), vec!["Line1", "Line3"]);
+        assert_eq!(document.content(), &vec!["Line1", "Line3"]);
     }
 
     #[rstest]
     fn document_replace_text(mut document: Document) {
         document.replace_text("Line2", "Replaced line");
-        assert_eq!(document.content(), vec!["Line1", "Replaced line", "Line3"]);
+        assert_eq!(document.content(), &vec!["Line1", "Replaced line", "Line3"]);
     }
 
     #[rstest]
@@ -112,6 +112,6 @@ pub(crate) mod tests_document {
 
         document.restore_snapshot(snapshot);
 
-        assert_eq!(document.content(), vec!["Line1", "Line2", "Line3"]);
+        assert_eq!(document.content(), &vec!["Line1", "Line2", "Line3"]);
     }
 }

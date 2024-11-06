@@ -6,6 +6,7 @@ mod document;
 use std::{cell::RefCell, io::BufRead, rc::Rc};
 
 use application::ApplicationBuilder;
+use commands::CommandHistory;
 use document::Document;
 
 struct Terminal {}
@@ -25,6 +26,7 @@ impl console::Console for Terminal {
 fn main() {
     let terminal = Rc::new(RefCell::new(Terminal {}));
     let doc = Rc::new(RefCell::new(Document::new()));
+    let command_history = Rc::new(RefCell::new(CommandHistory::new()));
     {
         let mut app = ApplicationBuilder::new()
             .with_console(terminal.clone())
@@ -33,14 +35,14 @@ fn main() {
         let print_command = commands::PrintCommand::new(doc.clone(), terminal.clone());
         app.add_command("Print".to_string(), Rc::new(RefCell::new(print_command)));
 
-        let add_text_command = commands::AddTextCommand::new(doc.clone());
+        let add_text_command = commands::AddTextCommand::new(doc.clone(), command_history.clone());
         app.add_command(
             "AddText".to_string(),
             Rc::new(RefCell::new(add_text_command)),
         );
         app.add_command(
             "ReplaceText".to_string(),
-            Rc::new(RefCell::new(commands::ReplaceTextCommand::new(doc.clone()))),
+            Rc::new(RefCell::new(commands::ReplaceTextCommand::new(doc.clone(), command_history.clone()))),
         );
 
         app.run();
