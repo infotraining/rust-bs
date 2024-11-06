@@ -1,6 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
-
-use mockall::{automock, predicate::str::contains};
+use mockall::{automock};
 
 #[automock]
 pub trait Console {
@@ -11,10 +9,10 @@ pub trait Console {
 #[cfg(test)]
 pub(crate) mod tests_console {
     use std::{cell::RefCell, rc::Rc};
-    use super::{Console, MockConsole};
+    use super::{MockConsole};
 
     use mockall::predicate::str::contains;
-    use rstest::{rstest, fixture};
+    use rstest::{fixture};
 
     #[fixture]
     pub(crate) fn mock_console() -> Rc<RefCell<MockConsole>> {

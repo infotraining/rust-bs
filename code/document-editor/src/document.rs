@@ -1,5 +1,3 @@
-use bincode::serialize;
-
 pub struct Document {
     content: Vec<String>,
 }

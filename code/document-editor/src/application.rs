@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -29,7 +28,7 @@ impl Application {
             }
 
             if let Some(cmd) = self.commands.get(&command_name) {
-                cmd.as_ref().borrow_mut().parse(&line);
+                let _ = cmd.as_ref().borrow_mut().parse(&line);
                 cmd.as_ref().borrow_mut().execute();
             } else {
                 self.console
@@ -74,8 +73,8 @@ impl ApplicationBuilder {
 #[cfg(test)]
 pub(crate) mod tests_application {
     use crate::application::ApplicationBuilder;
-    use crate::commands::{Command, MockCommand};    
-    use crate::console::{Console, MockConsole, tests_console::mock_console};
+    use crate::commands::{MockCommand};    
+    use crate::console::{MockConsole, tests_console::mock_console};
     use mockall::{Sequence, predicate::eq};
     use rstest::rstest;
     use std::{cell::RefCell, rc::Rc};

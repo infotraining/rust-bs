@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::default;
 use std::rc::Rc;
 
 use crate::console::Console;
@@ -22,7 +21,7 @@ pub trait ReversibleCommand: Command {
 
 #[derive(Default)]
 pub struct CommandHistory {
-    pub commands: Vec<Box<dyn ReversibleCommand>>,    
+    pub commands: Vec<Box<dyn ReversibleCommand>>,
 }
 
 impl CommandHistory {
@@ -81,9 +80,9 @@ impl Command for PrintCommand {
 
 #[cfg(test)]
 mod test_commands_helpers {
-    use std::{cell::RefCell, rc::Rc};
-    use rstest::{rstest, fixture};
     use crate::{console::MockConsole, document::Document};
+    use rstest::{fixture};
+    use std::{cell::RefCell, rc::Rc};
 
     #[fixture]
     pub(super) fn mock_console() -> Rc<RefCell<MockConsole>> {
@@ -108,15 +107,14 @@ mod test_commands_helpers {
 
 #[cfg(test)]
 mod tests_print_command {
+    use super::test_commands_helpers::{document, mock_console};
     use crate::commands::{Command, CommandParseError, PrintCommand};
     use crate::console::MockConsole;
-    use crate::document::{Document};
+    use crate::document::Document;
     use mockall::{predicate::eq, Sequence};
-    use rstest::{fixture, rstest};
+    use rstest::{rstest};
     use std::{cell::RefCell, rc::Rc};
-    use super::test_commands_helpers::{document, mock_console};
 
-    
     #[rstest]
     fn execute_prints_document_on_console(
         document: Rc<RefCell<Document>>,
@@ -146,8 +144,7 @@ mod tests_print_command {
                 .returning(|_| ());
         }
 
-        let mut print_cmd =
-            PrintCommand::new(document.clone(), mock_console.clone());
+        let mut print_cmd = PrintCommand::new(document.clone(), mock_console.clone());
 
         print_cmd.execute();
     }
@@ -187,7 +184,10 @@ pub struct AddTextCommand {
 }
 
 impl AddTextCommand {
-    pub fn new(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) -> AddTextCommand {
+    pub fn new(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) -> AddTextCommand {
         AddTextCommand {
             document,
             command_history,
@@ -225,8 +225,10 @@ impl Command for AddTextCommand {
 }
 
 impl ReversibleCommand for AddTextCommand {
-    fn undo(&mut self) { 
-        self.document.borrow_mut().restore_snapshot(self.snapshot.take().unwrap());       
+    fn undo(&mut self) {
+        self.document
+            .borrow_mut()
+            .restore_snapshot(self.snapshot.take().unwrap());
     }
 
     fn clone(&self) -> Box<dyn ReversibleCommand> {
@@ -241,15 +243,19 @@ impl ReversibleCommand for AddTextCommand {
 
 #[cfg(test)]
 mod tests_add_text_command {
+    use super::test_commands_helpers::{command_history, document};
     use crate::commands::{AddTextCommand, Command, CommandHistory, ReversibleCommand};
-    use crate::document::{Document};
-    use super::test_commands_helpers::{document, command_history};
+    use crate::document::Document;
     use rstest::rstest;
     use std::{cell::RefCell, rc::Rc};
 
     #[rstest]
-    fn execute_adds_line_at_the_end_of_document(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {        
-        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone()).with_text("Hello, world!");
+    fn execute_adds_line_at_the_end_of_document(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
+        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone())
+            .with_text("Hello, world!");
 
         add_text_cmd.execute();
 
@@ -260,8 +266,12 @@ mod tests_add_text_command {
     }
 
     #[rstest]
-    fn execute_registers_itself_in_command_history(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
-        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone()).with_text("Hello, world!");
+    fn execute_registers_itself_in_command_history(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
+        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone())
+            .with_text("Hello, world!");
 
         add_text_cmd.execute();
 
@@ -269,16 +279,22 @@ mod tests_add_text_command {
     }
 
     #[rstest]
-    fn parsing_correct_arguments(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
+    fn parsing_correct_arguments(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
         let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone());
 
-        add_text_cmd.parse("AddText Hello, world!");
+        let _ = add_text_cmd.parse("AddText Hello, world!");
 
         assert_eq!(add_text_cmd.text, Some("Hello, world!".to_string()));
     }
 
     #[rstest]
-    fn parsing_incorrect_arguments(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
+    fn parsing_incorrect_arguments(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
         let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone());
 
         assert_eq!(
@@ -290,14 +306,21 @@ mod tests_add_text_command {
     }
 
     #[rstest]
-    fn undo_erases_added_line(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {        
-        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone()).with_text("Hello, world!");
+    fn undo_erases_added_line(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
+        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone())
+            .with_text("Hello, world!");
 
         add_text_cmd.execute();
 
         add_text_cmd.undo();
 
-        assert_eq!(document.as_ref().borrow().content(), &vec!["Line1", "Line2", "Line3"]);
+        assert_eq!(
+            document.as_ref().borrow().content(),
+            &vec!["Line1", "Line2", "Line3"]
+        );
     }
 }
 
@@ -309,7 +332,10 @@ pub struct ReplaceTextCommand {
 }
 
 impl ReplaceTextCommand {
-    pub fn new(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) -> ReplaceTextCommand {
+    pub fn new(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) -> ReplaceTextCommand {
         ReplaceTextCommand {
             document,
             command_history,
@@ -372,21 +398,29 @@ impl ReversibleCommand for ReplaceTextCommand {
 
 #[cfg(test)]
 mod tests_replace_text_command {
-    use crate::commands::{Command, ReplaceTextCommand, ReversibleCommand};
-    use crate::document::{Document};
     use super::test_commands_helpers::{command_history, document};
     use super::CommandHistory;
+    use crate::commands::{Command, ReplaceTextCommand, ReversibleCommand};
+    use crate::document::Document;
     use rstest::{fixture, rstest};
     use std::{cell::RefCell, rc::Rc};
 
     #[fixture]
-    fn replace_text_cmd(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) -> ReplaceTextCommand {
+    fn replace_text_cmd(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) -> ReplaceTextCommand {
         ReplaceTextCommand::new(document.clone(), command_history.clone())
     }
 
     #[rstest]
-    fn execute_replaces_text_fragment_in_document(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
-        let mut replace_text_cmd = ReplaceTextCommand::new(document.clone(), command_history.clone()).with_args("Line2", "Replaced");
+    fn execute_replaces_text_fragment_in_document(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<crate::commands::CommandHistory>>,
+    ) {
+        let mut replace_text_cmd =
+            ReplaceTextCommand::new(document.clone(), command_history.clone())
+                .with_args("Line2", "Replaced");
 
         replace_text_cmd.execute();
 
@@ -397,8 +431,13 @@ mod tests_replace_text_command {
     }
 
     #[rstest]
-    fn execute_registers_itself_in_command_history(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
-        let mut replace_text_cmd = ReplaceTextCommand::new(document.clone(), command_history.clone()).with_args("Line2", "Replaced");
+    fn execute_registers_itself_in_command_history(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
+        let mut replace_text_cmd =
+            ReplaceTextCommand::new(document.clone(), command_history.clone())
+                .with_args("Line2", "Replaced");
 
         replace_text_cmd.execute();
 
@@ -407,7 +446,7 @@ mod tests_replace_text_command {
 
     #[rstest]
     fn parsing_correct_arguments(mut replace_text_cmd: ReplaceTextCommand) {
-        replace_text_cmd.parse("ReplaceText Line2 Replaced");
+        let _ = replace_text_cmd.parse("ReplaceText Line2 Replaced");
 
         assert_eq!(replace_text_cmd.old_text, Some("Line2".to_string()));
         assert_eq!(replace_text_cmd.new_text, Some("Replaced".to_string()));
@@ -424,15 +463,26 @@ mod tests_replace_text_command {
     }
 
     #[rstest]
-    fn undo_restores_replaced_text_fragment(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
-        let mut replace_text_cmd = ReplaceTextCommand::new(document.clone(), command_history.clone()).with_args("Line2", "Replaced");
+    fn undo_restores_replaced_text_fragment(
+        document: Rc<RefCell<Document>>,
+        command_history: Rc<RefCell<CommandHistory>>,
+    ) {
+        let mut replace_text_cmd =
+            ReplaceTextCommand::new(document.clone(), command_history.clone())
+                .with_args("Line2", "Replaced");
 
         replace_text_cmd.execute();
-        assert_eq!(document.as_ref().borrow().content(), &vec!["Line1", "Replaced", "Line3"]);
+        assert_eq!(
+            document.as_ref().borrow().content(),
+            &vec!["Line1", "Replaced", "Line3"]
+        );
 
         replace_text_cmd.undo();
 
-        assert_eq!(document.as_ref().borrow().content(), &vec!["Line1", "Line2", "Line3"]);
+        assert_eq!(
+            document.as_ref().borrow().content(),
+            &vec!["Line1", "Line2", "Line3"]
+        );
     }
 }
 
@@ -463,10 +513,10 @@ impl Command for UndoCommand {
 
 #[cfg(test)]
 mod tests_undo_command {
-    use std::{cell::RefCell, rc::Rc};
+    use super::{test_commands_helpers::command_history, Command, ReversibleCommand, UndoCommand};
     use mockall::mock;
     use rstest::rstest;
-    use super::{test_commands_helpers::command_history, Command, ReversibleCommand, UndoCommand};
+    use std::{cell::RefCell, rc::Rc};
 
     mock! {
         TestCommand {}
@@ -475,7 +525,7 @@ mod tests_undo_command {
             fn execute(&mut self);
             fn parse(&mut self, command: &str) -> Result<(), crate::commands::CommandParseError>;
         }
-        
+
         impl ReversibleCommand for TestCommand {
             fn undo(&mut self);
             fn clone(&self) -> Box<dyn ReversibleCommand>;
@@ -483,21 +533,24 @@ mod tests_undo_command {
     }
 
     #[rstest]
-    fn execute_pops_command_from_history_and_executes_undo(command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+    fn execute_pops_command_from_history_and_executes_undo(
+        command_history: Rc<RefCell<crate::commands::CommandHistory>>,
+    ) {
         let mut cmd = Box::new(MockTestCommand::new());
         cmd.expect_undo().times(1).returning(|| ());
         command_history.borrow_mut().add(cmd);
 
         let mut undo_cmd = UndoCommand::new(command_history.clone());
         undo_cmd.execute();
-        
+
         assert_eq!(command_history.borrow().commands.len(), 0);
     }
 
     #[rstest]
-    fn when_command_history_is_empty_execute_does_nothing(command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+    fn when_command_history_is_empty_execute_does_nothing(
+        command_history: Rc<RefCell<crate::commands::CommandHistory>>,
+    ) {
         let mut undo_cmd = UndoCommand::new(command_history.clone());
         undo_cmd.execute();
     }
-
 }
