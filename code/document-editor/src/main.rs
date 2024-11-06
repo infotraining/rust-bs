@@ -36,14 +36,18 @@ fn main() {
         app.add_command("Print".to_string(), Rc::new(RefCell::new(print_command)));
 
         let add_text_command = commands::AddTextCommand::new(doc.clone(), command_history.clone());
+        
         app.add_command(
             "AddText".to_string(),
             Rc::new(RefCell::new(add_text_command)),
         );
+                
         app.add_command(
             "ReplaceText".to_string(),
             Rc::new(RefCell::new(commands::ReplaceTextCommand::new(doc.clone(), command_history.clone()))),
         );
+
+        app.add_command("Clear".to_string(), Rc::new(RefCell::new(commands::ClearCommand::new(doc.clone(), command_history.clone()))));
 
         app.add_command("Undo".to_string(), Rc::new(RefCell::new(commands::UndoCommand::new(command_history.clone()))));
 

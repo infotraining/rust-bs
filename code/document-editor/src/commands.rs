@@ -554,3 +554,72 @@ mod tests_undo_command {
         undo_cmd.execute();
     }
 }
+
+/// A command to clear the document content.
+pub struct ClearCommand {
+    document: Rc<RefCell<Document>>,
+    command_history: Rc<RefCell<CommandHistory>>,
+    snapshot: Option<DocumentSnapshot>,
+}
+
+impl ClearCommand {
+    pub fn new(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) -> ClearCommand {
+        ClearCommand {
+            document,
+            command_history,
+            snapshot: None,
+        }
+    }
+}
+
+impl Command for ClearCommand {
+    fn execute(&mut self) {
+        self.snapshot = Some(self.document.borrow().create_snapshot());
+        self.command_history.borrow_mut().add(self.clone());
+        self.document.borrow_mut().clear();
+    }
+
+    fn parse(&mut self, _command: &str) -> Result<(), CommandParseError> {
+        Ok(())
+    }
+}
+
+impl ReversibleCommand for ClearCommand {
+    fn undo(&mut self) {
+        self.document.borrow_mut().restore_snapshot(self.snapshot.take().unwrap());
+    }
+
+    fn clone(&self) -> Box<dyn ReversibleCommand> {
+        Box::new(ClearCommand {
+            document: self.document.clone(),
+            command_history: self.command_history.clone(),
+            snapshot: self.snapshot.clone(),
+        })
+    }
+}
+
+
+#[cfg(test)]
+mod tests_clear_command {
+    use std::{cell::RefCell, rc::Rc};
+    use rstest::rstest;
+    use crate::{commands::{ClearCommand, Command}, document::Document};
+    use super::test_commands_helpers::{command_history, document};
+
+
+    #[rstest]
+    fn execute_clears_document_content(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+        let mut clear_cmd = ClearCommand::new(document.clone(), command_history.clone());
+        clear_cmd.execute();
+
+        assert_eq!(document.borrow().content(), &Vec::<String>::new());
+    }
+
+    #[rstest]
+    fn execute_registers_itself_in_command_history(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+        let mut clear_cmd = ClearCommand::new(document.clone(), command_history.clone());
+        clear_cmd.execute();
+
+        assert_eq!(command_history.borrow().commands.len(), 1);
+    }
+}
