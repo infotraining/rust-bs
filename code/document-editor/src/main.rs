@@ -45,6 +45,8 @@ fn main() {
             Rc::new(RefCell::new(commands::ReplaceTextCommand::new(doc.clone(), command_history.clone()))),
         );
 
+        app.add_command("Undo".to_string(), Rc::new(RefCell::new(commands::UndoCommand::new(command_history.clone()))));
+
         app.run();
     }
 }

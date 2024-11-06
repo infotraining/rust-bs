@@ -6,7 +6,6 @@ use crate::console::Console;
 use crate::document::{Document, DocumentSnapshot};
 
 use mockall::automock;
-use test_commands_helpers::command_history;
 
 /// A command that can be executed by the application.
 #[automock]
@@ -80,6 +79,7 @@ impl Command for PrintCommand {
 
 /// Tests for the PrintCommand
 
+#[cfg(test)]
 mod test_commands_helpers {
     use std::{cell::RefCell, rc::Rc};
     use rstest::{rstest, fixture};
@@ -206,6 +206,7 @@ impl Command for AddTextCommand {
     fn execute(&mut self) {
         if let Some(text) = &self.text {
             self.snapshot = Some(self.document.borrow().create_snapshot());
+            self.command_history.borrow_mut().add(self.clone());
             self.document.borrow_mut().add_line(text.clone());
         }
     }
@@ -259,6 +260,15 @@ mod tests_add_text_command {
     }
 
     #[rstest]
+    fn execute_registers_itself_in_command_history(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
+        let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone()).with_text("Hello, world!");
+
+        add_text_cmd.execute();
+
+        assert_eq!(command_history.as_ref().borrow().commands.len(), 1);
+    }
+
+    #[rstest]
     fn parsing_correct_arguments(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
         let mut add_text_cmd = AddTextCommand::new(document.clone(), command_history.clone());
 
@@ -291,7 +301,6 @@ mod tests_add_text_command {
     }
 }
 
-#[derive(Clone)]
 pub struct ReplaceTextCommand {
     document: Rc<RefCell<Document>>,
     command_history: Rc<RefCell<CommandHistory>>,
@@ -320,6 +329,8 @@ impl Command for ReplaceTextCommand {
     fn execute(&mut self) {
         let old_text = self.old_text.as_ref().unwrap();
         let new_text = self.new_text.as_ref().unwrap();
+
+        self.command_history.borrow_mut().add(self.clone());
 
         let mut doc = self.document.borrow_mut();
         doc.replace_text(old_text, new_text);
@@ -386,6 +397,15 @@ mod tests_replace_text_command {
     }
 
     #[rstest]
+    fn execute_registers_itself_in_command_history(document: Rc<RefCell<Document>>, command_history: Rc<RefCell<CommandHistory>>) {
+        let mut replace_text_cmd = ReplaceTextCommand::new(document.clone(), command_history.clone()).with_args("Line2", "Replaced");
+
+        replace_text_cmd.execute();
+
+        assert_eq!(command_history.as_ref().borrow().commands.len(), 1);
+    }
+
+    #[rstest]
     fn parsing_correct_arguments(mut replace_text_cmd: ReplaceTextCommand) {
         replace_text_cmd.parse("ReplaceText Line2 Replaced");
 
@@ -414,4 +434,70 @@ mod tests_replace_text_command {
 
         assert_eq!(document.as_ref().borrow().content(), &vec!["Line1", "Line2", "Line3"]);
     }
+}
+
+pub struct UndoCommand {
+    command_history: Rc<RefCell<CommandHistory>>,
+}
+
+impl UndoCommand {
+    pub fn new(command_history: Rc<RefCell<CommandHistory>>) -> UndoCommand {
+        UndoCommand { command_history }
+    }
+}
+
+impl Command for UndoCommand {
+    fn execute(&mut self) {
+        self.command_history.borrow_mut().undo();
+    }
+
+    fn parse(&mut self, command: &str) -> Result<(), CommandParseError> {
+        match command {
+            "Undo" => Ok(()),
+            _ => Err(CommandParseError {
+                message: format!("Unknown command: {}", command),
+            }),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_undo_command {
+    use std::{cell::RefCell, rc::Rc};
+    use mockall::mock;
+    use rstest::rstest;
+    use super::{test_commands_helpers::command_history, Command, ReversibleCommand, UndoCommand};
+
+    mock! {
+        TestCommand {}
+
+        impl Command for TestCommand {
+            fn execute(&mut self);
+            fn parse(&mut self, command: &str) -> Result<(), crate::commands::CommandParseError>;
+        }
+        
+        impl ReversibleCommand for TestCommand {
+            fn undo(&mut self);
+            fn clone(&self) -> Box<dyn ReversibleCommand>;
+        }
+    }
+
+    #[rstest]
+    fn execute_pops_command_from_history_and_executes_undo(command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+        let mut cmd = Box::new(MockTestCommand::new());
+        cmd.expect_undo().times(1).returning(|| ());
+        command_history.borrow_mut().add(cmd);
+
+        let mut undo_cmd = UndoCommand::new(command_history.clone());
+        undo_cmd.execute();
+        
+        assert_eq!(command_history.borrow().commands.len(), 0);
+    }
+
+    #[rstest]
+    fn when_command_history_is_empty_execute_does_nothing(command_history: Rc<RefCell<crate::commands::CommandHistory>>) {
+        let mut undo_cmd = UndoCommand::new(command_history.clone());
+        undo_cmd.execute();
+    }
+
 }
