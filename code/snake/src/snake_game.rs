@@ -86,6 +86,16 @@ impl SnakeGame {
         }
     }
 
+    fn get_allowed_direction(&self, direction: Direction) -> Direction {
+        match direction {
+            Direction::Up if self.current_direction != Direction::Down => Direction::Up,
+            Direction::Down if self.current_direction != Direction::Up => Direction::Down,
+            Direction::Left if self.current_direction != Direction::Right => Direction::Left,
+            Direction::Right if self.current_direction != Direction::Left => Direction::Right,
+            _ => self.current_direction,
+        }
+    }
+
     fn play(&mut self, ctx: &mut BTerm) {
         self.mode = GameMode::Playing;
         ctx.cls();
@@ -96,10 +106,10 @@ impl SnakeGame {
         if let Some(key) = ctx.key {
             match key {
                 VirtualKeyCode::Escape => self.mode = GameMode::GameOver,
-                VirtualKeyCode::Up => self.current_direction = Direction::Up,
-                VirtualKeyCode::Down => self.current_direction = Direction::Down,
-                VirtualKeyCode::Left => self.current_direction = Direction::Left,
-                VirtualKeyCode::Right => self.current_direction = Direction::Right,
+                VirtualKeyCode::Up  => self.current_direction = self.get_allowed_direction(Direction::Up),
+                VirtualKeyCode::Down => self.current_direction = self.get_allowed_direction(Direction::Down),
+                VirtualKeyCode::Left => self.current_direction =  self.get_allowed_direction(Direction::Left),
+                VirtualKeyCode::Right => self.current_direction = self.get_allowed_direction(Direction::Right),
                 _ => {}
             }
         }
