@@ -14,10 +14,7 @@ struct LinkedList<T> {
 
 impl<T> LinkedList<T> {
     fn new() -> Self {
-        LinkedList {
-            head: None,
-            len: 0,
-        }
+        LinkedList { head: None, len: 0 }
     }
 
     fn len(&self) -> usize {
@@ -140,6 +137,32 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+impl<T> PartialEq for LinkedList<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+
+        let mut self_iter = self.iter();
+        let mut other_iter = other.iter();
+
+        loop {
+            match (self_iter.next(), other_iter.next()) {
+                (Some(a), Some(b)) => {
+                    if a != b {
+                        return false;
+                    }
+                }
+                (None, None) => return true,
+                _ => return false,
+            }
+        }
+    }
+}
+
 macro_rules! lst {
     ($($e:expr),*) => {{
         let mut lst = LinkedList::new();
@@ -151,6 +174,7 @@ macro_rules! lst {
 #[cfg(test)]
 mod tests_linked_list {
     use super::*;
+    use rstest::rstest;
 
     #[test]
     fn new_creates_empty_list() {
@@ -243,7 +267,7 @@ mod tests_linked_list {
         let mut lst = LinkedList::<String>::new();
         lst.push("Hello".to_string());
         lst.push("World".to_string());
-        
+
         let mut result = String::new();
         for i in lst.into_iter() {
             result += &i;
@@ -277,12 +301,40 @@ mod tests_linked_list {
         assert_eq!(lst[3], 4);
         assert_eq!(lst[4], 5);
     }
+
+    #[rstest]
+    #[case(lst![], lst![], true)]
+    #[case(lst![1], lst![1], true)]
+    #[case(lst![1, 2, 3, 4, 5], lst![1, 2, 3, 4, 5], true)]
+    #[case(lst![1, 2, 3, 4, 5], lst![1, 2, 3, 4, 6], false)]
+    #[case(lst![1, 2, 3, 4, 5], lst![1, 2, 3, 4], false)]
+    #[case(lst![1, 2, 3, 4], lst![1, 2, 3, 4, 5], false)]
+    fn partial_eq(
+        #[case] lst1: LinkedList<i32>,
+        #[case] lst2: LinkedList<i32>,
+        #[case] expected: bool,
+    ) {
+        assert_eq!(lst1 == lst2, expected);
+    }
+
+    #[test]
+    fn macro_lst_works_with_strings() {
+        let lst = lst!["Hello", "World"];
+
+        assert_eq!(lst.len(), 2);
+        assert_eq!(lst[0], "Hello");
+        assert_eq!(lst[1], "World");
+    }
 }
 
 fn main() {
     let my_list = lst![1, 2, 3, 4, 5];
 
+    print!("List: ");
     for i in my_list.iter() {
-        println!("{}", i);
+        print!("{} ", i);
     }
+    println!();
+
+    println!("Sum: {}", my_list.iter().sum::<i32>());
 }
