@@ -61,6 +61,12 @@ impl<T> LinkedList<T> {
             next: self.head.as_mut().map(|node| &mut **node),
         }
     }
+
+    fn into_iter(self) -> IntoIter<T> {
+        IntoIter {
+            next: self.head.map(|node| *node),
+        }
+    }
 }
 
 impl<T> Index<usize> for LinkedList<T> {
@@ -115,6 +121,21 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         self.next.take().map(|node| {
             self.next = node.next.as_mut().map(|node| &mut **node);
             &mut node.value
+        })
+    }
+}
+
+struct IntoIter<T> {
+    next: Option<Node<T>>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.map(|node| *node);
+            node.value
         })
     }
 }
@@ -215,6 +236,18 @@ mod tests_linked_list {
         }
 
         assert_eq!(sum, 129);
+    }
+
+    #[test]
+    fn into_iter_with_for_loop() {
+        let mut lst = LinkedList::<String>::new();
+        lst.push("Hello".to_string());
+        lst.push("World".to_string());
+        
+        let mut result = String::new();
+        for i in lst.into_iter() {
+            result += &i;
+        }
     }
 
     #[test]
