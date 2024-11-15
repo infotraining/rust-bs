@@ -50,6 +50,38 @@ impl<T> List<T> {
     {
         List{ head: self.head.as_ref().and_then(|node| node.next.clone()) }
     }
+
+    pub fn iter(&self) -> Iter<T> {
+        Iter { next: self.head.as_deref() }
+    }
+}
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_deref();
+            &node.item
+        })
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut current_link = self.head.take();
+        while let Some(node) = current_link {
+            if let Ok(mut node) = Rc::try_unwrap(node) {
+                current_link = node.next.take();
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 mod test_rc_list {
@@ -85,4 +117,15 @@ mod test_rc_list {
         assert_eq!(lst.head(), None);
     }
 
+    #[test]
+    fn iter_returns_iterator_with_shared_references() {
+        let mut lst = List::new();
+        let lst = lst.prepend(1).prepend(2).prepend(3);
+
+        let mut iter = lst.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), None);
+    }
 }
