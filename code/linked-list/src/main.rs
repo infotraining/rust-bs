@@ -1,5 +1,6 @@
 #[macro_use]
 mod list_v1;
+mod list_v2;
 
 use list_v1::LinkedList;
 
