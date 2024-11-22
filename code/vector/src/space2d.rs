@@ -7,9 +7,9 @@ pub struct Vector2D {
 }
 
 impl Vector2D {
-    const ZERO: Vector2D = Vector2D { x: 0.0, y: 0.0 };
-    const UNIT_X: Vector2D = Vector2D { x: 1.0, y: 0.0 };
-    const UNIT_Y: Vector2D = Vector2D { x: 0.0, y: 1.0 };
+    pub const ZERO: Vector2D = Vector2D { x: 0.0, y: 0.0 };
+    pub const UNIT_X: Vector2D = Vector2D { x: 1.0, y: 0.0 };
+    pub const UNIT_Y: Vector2D = Vector2D { x: 0.0, y: 1.0 };
 
     pub fn new(x: f64, y: f64) -> Vector2D {
         Vector2D { x, y }
