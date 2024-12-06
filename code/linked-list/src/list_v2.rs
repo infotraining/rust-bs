@@ -104,6 +104,14 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+macro_rules! lst {
+    ($($e:expr),*) => {{
+        let mut lst = List::new();
+        $(lst.push($e);)*
+        lst
+    }};
+}
+
 mod tests_list {
     use super::*;
     use rstest::rstest;
@@ -189,6 +197,18 @@ mod tests_list {
         assert_eq!(iter.next(), Some("3".to_string()));
         assert_eq!(iter.next(), Some("2".to_string()));
         assert_eq!(iter.next(), Some("1".to_string()));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[rstest]
+    fn macro_lst() {
+        let l = lst![1, 2, 3];
+
+        let mut iter = l.into_iter();
+
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(1));
         assert_eq!(iter.next(), None);
     }
 }
