@@ -1,6 +1,7 @@
 use crate::parsemath::token::Token;
 use std::iter::Peekable;
 use std::str::Chars;
+use crate::parsemath::tokenizer::TokenizingError::InvalidCharacter;
 
 pub struct Tokenizer<'a> {
     expr: Peekable<Chars<'a>>,
@@ -20,29 +21,40 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-impl<'a> Iterator for Tokenizer<'a> {
-    type Item = Token;
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TokenizingError {
+    InvalidCharacter(char),
+    InvalidNumber,
+}
 
-    fn next(&mut self) -> Option<Token> {
+impl<'a> Iterator for Tokenizer<'a> {
+    type Item = Result<Token, TokenizingError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
         self.skip_whitespaces();
 
         if let Some(c) = self.expr.next() {
             match c {
-                '+' => Some(Token::Add),
-                '-' => Some(Token::Subtract),
-                '*' => Some(Token::Multiply),
-                '/' => Some(Token::Divide),
-                '^' => Some(Token::Caret),
-                '(' => Some(Token::LeftParen),
-                ')' => Some(Token::RightParen),
+                '+' => Some(Ok(Token::Add)),
+                '-' => Some(Ok(Token::Subtract)),
+                '*' => Some(Ok(Token::Multiply)),
+                '/' => Some(Ok(Token::Divide)),
+                '^' => Some(Ok(Token::Caret)),
+                '(' => Some(Ok(Token::LeftParen)),
+                ')' => Some(Ok(Token::RightParen)),
                 '0'..='9' => {
-                    let mut number = c.to_string();
+                    let mut number_str = c.to_string();
                     while let Some('0'..='9') | Some('.') = self.expr.peek() {
-                        number.push(self.expr.next().unwrap());
+                        number_str.push(self.expr.next().unwrap());
                     }
-                    Some(Token::Number(number.parse::<f64>().unwrap()))
+
+                    let number = number_str.parse::<f64>()
+                        .map(|n| Token::Number(n))
+                        .map_err(|_| TokenizingError::InvalidNumber);
+
+                    Some(number)
                 }
-                _ => panic!("Unexpected character"),
+                invalid => Some(Err(TokenizingError::InvalidCharacter(invalid))),
             }
         } else {
             None
@@ -63,7 +75,7 @@ mod tests {
     fn tokenizer_operators(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
 
-        let tokens: Vec<Token> = tokenizer.collect();
+        let tokens: Vec<Token> = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap();
         assert_eq!(tokens, expected_tokens);
     }
 
@@ -73,7 +85,7 @@ mod tests {
     fn tokenizer_numbers(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
 
-        let tokens: Vec<Token> = tokenizer.collect();
+        let tokens: Vec<Token> = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap();
         assert_eq!(tokens, expected_tokens);
     }
 
@@ -83,7 +95,7 @@ mod tests {
     fn tokenizer_parens(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
 
-        let tokens: Vec<Token> = tokenizer.collect();
+        let tokens: Vec<Token> = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap();
         assert_eq!(tokens, expected_tokens);
     }
 
@@ -93,7 +105,29 @@ mod tests {
     fn tokenizer_expressions(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
 
-        let tokens: Vec<Token> = tokenizer.collect();
+        let tokens = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap();
         assert_eq!(tokens, expected_tokens);
+    }
+
+    #[rstest]
+    #[case("1a", 'a')]
+    #[case("2#", '#')]
+    fn tokenizer_invalid_characters(#[case] expr: &str, #[case] expected: char) {
+        let tokenizer = Tokenizer::new(expr);
+
+        let result = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap_err();
+
+        assert_eq!(result, TokenizingError::InvalidCharacter(expected));
+    }
+
+    #[rstest]
+    #[case("1.324.3")]
+    #[case("1....")]
+    fn tokenizer_invalid_number(#[case] expr: &str) {
+        let tokenizer = Tokenizer::new(expr);
+
+        let result = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap_err();
+
+        assert_eq!(result, TokenizingError::InvalidNumber);
     }
 }
