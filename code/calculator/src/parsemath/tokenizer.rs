@@ -1,7 +1,6 @@
 use crate::parsemath::token::Token;
 use std::iter::Peekable;
 use std::str::Chars;
-use crate::parsemath::tokenizer::TokenizingError::InvalidCharacter;
 
 pub struct Tokenizer<'a> {
     expr: Peekable<Chars<'a>>,
