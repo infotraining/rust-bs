@@ -201,7 +201,7 @@ mod tests {
             Box::new(Expression::Number(3.0))
         )
     )]
-    fn parse_to_ast_multiplication(#[case] expression: &str, #[case] expected_ast: Expression) {
+    fn parse_multiplication(#[case] expression: &str, #[case] expected_ast: Expression) {
         let mut parser = Parser::new(expression).unwrap();
 
         let ast = parser.parse().unwrap();
@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[rstest]
-    fn parse_to_ast_division() {
+    fn parse_division() {
         let expression = "1 / 2";
         let mut parser = Parser::new(expression).unwrap();
 
@@ -228,7 +228,7 @@ mod tests {
         "1 + 2",
         Expression::Add(Box::new(Expression::Number(1.0)), Box::new(Expression::Number(2.0)))
     )]
-    fn parse_to_ast_addition(#[case] expression: &str, #[case] expected_ast: Expression) {
+    fn parse_addition(#[case] expression: &str, #[case] expected_ast: Expression) {
         let mut parser = Parser::new(expression).unwrap();
 
         let ast = parser.parse().unwrap();
@@ -240,7 +240,7 @@ mod tests {
         "1 - 2",
         Expression::Subtract(Box::new(Expression::Number(1.0)), Box::new(Expression::Number(2.0)))
     )]
-    fn parse_to_ast_subtraction(#[case] expression: &str, #[case] expected_ast: Expression) {
+    fn parse_subtraction(#[case] expression: &str, #[case] expected_ast: Expression) {
         let mut parser = Parser::new(expression).unwrap();
 
         let ast = parser.parse().unwrap();
@@ -271,7 +271,7 @@ mod tests {
             ))
         )
     )]
-    fn parse_to_ast_complex_expression(#[case] expression: &str, #[case] expected_ast: Expression) {
+    fn parse_complex_expression(#[case] expression: &str, #[case] expected_ast: Expression) {
         let mut parser = Parser::new(expression).unwrap();
 
         let ast = parser.parse().unwrap();
