@@ -34,10 +34,10 @@ impl<'a> Iterator for Tokenizer<'a> {
 
         if let Some(c) = self.expr.next() {
             match c {
-                '+' => Some(Ok(Token::Add)),
-                '-' => Some(Ok(Token::Subtract)),
-                '*' => Some(Ok(Token::Multiply)),
-                '/' => Some(Ok(Token::Divide)),
+                '+' => Some(Ok(Token::Plus)),
+                '-' => Some(Ok(Token::Minus)),
+                '*' => Some(Ok(Token::Star)),
+                '/' => Some(Ok(Token::Slash)),
                 '^' => Some(Ok(Token::Caret)),
                 '(' => Some(Ok(Token::LeftParen)),
                 ')' => Some(Ok(Token::RightParen)),
@@ -66,10 +66,10 @@ mod tests {
     use super::*;
     use rstest::*;
     #[rstest]
-    #[case("+", vec![Token::Add])]
-    #[case("-", vec![Token::Subtract])]
-    #[case("*", vec![Token::Multiply])]
-    #[case("/", vec![Token::Divide])]
+    #[case("+", vec![Token::Plus])]
+    #[case("-", vec![Token::Minus])]
+    #[case("*", vec![Token::Star])]
+    #[case("/", vec![Token::Slash])]
     #[case("^", vec![Token::Caret])]
     fn tokenizer_operators(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
@@ -99,8 +99,8 @@ mod tests {
     }
 
     #[rstest]
-    #[case("1+2", vec![Token::Number(1.0), Token::Add, Token::Number(2.0)])]
-    #[case("1 + 2", vec![Token::Number(1.0), Token::Add, Token::Number(2.0)])]
+    #[case("1+2", vec![Token::Number(1.0), Token::Plus, Token::Number(2.0)])]
+    #[case("1 + 2", vec![Token::Number(1.0), Token::Plus, Token::Number(2.0)])]
     fn tokenizer_expressions(#[case] expr: &str, #[case] expected_tokens: Vec<Token>) {
         let tokenizer = Tokenizer::new(expr);
 
