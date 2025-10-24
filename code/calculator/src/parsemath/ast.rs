@@ -6,4 +6,5 @@ pub enum Expression {
     Multiply(Box<Expression>, Box<Expression>),
     Divide(Box<Expression>, Box<Expression>),
     Negate(Box<Expression>),
+    Grouping(Box<Expression>),
 }

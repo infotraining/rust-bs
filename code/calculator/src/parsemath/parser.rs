@@ -96,6 +96,11 @@ impl Parser {
     fn primary(&mut self) -> Expression {
         let expression = match self.next() {
             Some(Token::Number(n)) => Expression::Number(n),
+            Some(Token::LeftParen) => {
+                let expression = self.expression();
+                self.consume_expected(Token::RightParen, "Expect ')' after expression.");
+                Expression::Grouping(Box::new(expression))
+            }
             _ => panic!(),
         };
 
@@ -124,6 +129,16 @@ impl Parser {
         if !self.is_at_end() {
             self.current_token_index += 1;
         }
+    }
+
+    fn consume_expected(&mut self, expected: Token, context: & str) {
+        if let Some(token) = self.next() {
+            if token == expected {
+                return;
+            }
+        }
+
+        panic!("{}", context);
     }
 
     // fn advance(&mut self) -> Token {
@@ -278,4 +293,39 @@ mod tests {
         let ast = parser.parse().unwrap();
         assert_eq!(ast, expected_ast);
     }
+
+    #[rstest]
+    #[case::expr_lb_1_rb("(1)", Expression::Grouping(Box::new(Expression::Number(1.0))))]
+    #[case::expr_lb_1_plus_2_rb_times_lb_3_minus_4_rb(
+        "(1 + 2) * (3 - 4)",
+        Expression::Multiply(
+            Box::new(Expression::Grouping(
+                Box::new(Expression::Add(
+                    Box::new(Expression::Number(1.0)),
+                    Box::new(Expression::Number(2.0))
+                ))
+            )),
+            Box::new(Expression::Grouping(
+                Box::new(Expression::Subtract(
+                    Box::new(Expression::Number(3.0)),
+                    Box::new(Expression::Number(4.0))
+                ))
+            )),
+        )
+    )]
+    fn parse_expression_with_brackets(#[case] expression: &str, #[case] expected_ast: Expression) {
+        let mut parser = Parser::new(expression).unwrap();
+
+        let ast = parser.parse().unwrap();
+        assert_eq!(ast, expected_ast);
+    }
+
+    #[rstest]
+    #[should_panic(expected = "Expect ')' after expression.")]
+    fn parse_unclosed_bracket() {
+        let expression = "(1";
+        let mut parser = Parser::new(expression).unwrap();
+        let ast = parser.parse().unwrap();
+    }
+
 }
