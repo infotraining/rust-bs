@@ -10,15 +10,15 @@ pub enum Expression {
 }
 
 impl Expression {
-    fn eval(&self) -> f64 {
+    pub fn evaluate(&self) -> f64 {
         match self {
             Expression::Number(n) => *n,
-            Expression::Add(a, b) => a.eval() + b.eval(),
-            Expression::Subtract(a, b) => a.eval() - b.eval(),
-            Expression::Multiply(a, b) => a.eval() * b.eval(),
-            Expression::Divide(a, b) => a.eval() / b.eval(),
-            Expression::Negate(expr) => -expr.eval(),
-            Expression::Grouping(expr) => expr.eval(),
+            Expression::Add(a, b) => a.evaluate() + b.evaluate(),
+            Expression::Subtract(a, b) => a.evaluate() - b.evaluate(),
+            Expression::Multiply(a, b) => a.evaluate() * b.evaluate(),
+            Expression::Divide(a, b) => a.evaluate() / b.evaluate(),
+            Expression::Negate(expr) => -expr.evaluate(),
+            Expression::Grouping(expr) => expr.evaluate(),
         }
     }
 }
@@ -56,7 +56,7 @@ mod tests {
         ), -3.0)]
     fn eval_simple_expression(#[case] ast: Expression, #[case] expected: f64)
     {
-        let result = ast.eval();
+        let result = ast.evaluate();
 
         assert_eq!(result, expected);
     }
