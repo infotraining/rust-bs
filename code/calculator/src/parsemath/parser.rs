@@ -101,7 +101,7 @@ impl Parser {
                 self.consume_expected(Token::RightParen, "Expect ')' after expression.");
                 Expression::Grouping(Box::new(expression))
             }
-            _ => panic!(),
+            _ => panic!("Syntax error. Expected number or '('."),
         };
 
         //self.advance();
@@ -321,11 +321,24 @@ mod tests {
     }
 
     #[rstest]
+    #[case::lb_1("(1")]
     #[should_panic(expected = "Expect ')' after expression.")]
-    fn parse_unclosed_bracket() {
-        let expression = "(1";
+    #[case::lb_lb_lb_1_rb_2_rb("(((1)2)")]
+    #[should_panic(expected = "Expect ')' after expression.")]
+    fn parse_unclosed_bracket(#[case] expression: &str) {
         let mut parser = Parser::new(expression).unwrap();
-        let ast = parser.parse().unwrap();
+        let _ = parser.parse().unwrap();
     }
 
+    #[rstest]
+    #[case::expr_plus_plus("++")]
+    #[should_panic(expected = "Syntax error. Expected number or '('.")]
+    #[case::expr_1_minus("1-")]
+    #[should_panic(expected = "Syntax error. Expected number or '('.")]
+    #[case::expr_rb_1(")1")]
+    #[should_panic(expected = "Syntax error. Expected number or '('.")]
+    fn parse_invalid_expression(#[case] expression: &str) {
+        let mut parser = Parser::new(expression).unwrap();
+        let _ = parser.parse().unwrap();
+    }
 }
