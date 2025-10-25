@@ -1,12 +1,15 @@
 use crate::parsemath::ast::Expression;
 use crate::parsemath::token::Token;
 use crate::parsemath::tokenizer::{Tokenizer, TokenizingError};
+use thiserror::Error;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Error, Debug, PartialEq, Copy, Clone)]
 pub enum ParserError {
-    UnableToParse,
+    #[error("Syntax error: {0}")]
+    UnexpectedToken(#[from] TokenizingError),
 }
 
+#[derive(Debug)]
 pub struct Parser {
     tokens: Vec<Token>,
     current_token_index: usize,
@@ -15,15 +18,12 @@ pub struct Parser {
 impl Parser {
     pub fn new(expression: &str) -> Result<Self, ParserError> {
         let tokenizer = Tokenizer::new(expression);
-        let tokens = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>();
+        let tokens = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>()?;
 
-        match tokens {
-            Ok(tokens) => Ok(Parser {
-                tokens,
-                current_token_index: 0,
-            }),
-            Err(_) => Err(ParserError::UnableToParse),
-        }
+        Ok(Parser {
+            tokens,
+            current_token_index: 0,
+        })
     }
 
     pub fn parse(&mut self) -> Result<Expression, ParserError> {
@@ -174,8 +174,9 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use crate::parsemath::ast::Expression;
-    use crate::parsemath::parser::Parser;
+    use crate::parsemath::parser::{Parser, ParserError};
     use rstest::*;
+    use crate::parsemath::tokenizer::TokenizingError;
 
     #[rstest]
     fn parse_to_ast() {
@@ -337,5 +338,13 @@ mod tests {
     fn parse_invalid_expression(#[case] expression: &str) {
         let mut parser = Parser::new(expression).unwrap();
         let _ = parser.parse().unwrap();
+    }
+
+    #[rstest]
+    fn parsing_error_unexpected_tokens() {
+        let expr = "2#";
+        let mut parser_error = Parser::new(expr).unwrap_err();
+        assert_eq!(parser_error, ParserError::UnexpectedToken(TokenizingError::InvalidCharacter('#')));
+        assert_eq!(format!("{}", parser_error), "Syntax error: Unexpected token \'#\'");
     }
 }

@@ -1,6 +1,7 @@
 use crate::parsemath::token::Token;
 use std::iter::Peekable;
 use std::str::Chars;
+use thiserror::Error;
 
 pub struct Tokenizer<'a> {
     expr: Peekable<Chars<'a>>,
@@ -20,9 +21,11 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Error, Debug, PartialEq, Clone, Copy)]
 pub enum TokenizingError {
+    #[error("Unexpected token '{0}'")]
     InvalidCharacter(char),
+    #[error("Invalid number format")]
     InvalidNumber,
 }
 
@@ -119,14 +122,28 @@ mod tests {
         assert_eq!(result, TokenizingError::InvalidCharacter(expected));
     }
 
+    #[test]
+    fn invalid_number_error_message()
+    {
+        let expr = "1#2";
+        let tokenizer = Tokenizer::new(expr);
+
+        let result = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap_err();
+        assert_eq!(result, TokenizingError::InvalidCharacter('#'));
+        assert_eq!(format!("{}", result), "Unexpected token \'#\'");
+    }
+
     #[rstest]
     #[case("1.324.3")]
     #[case("1....")]
+    #[case("1 + 3.33.3.3")]
     fn tokenizer_invalid_number(#[case] expr: &str) {
         let tokenizer = Tokenizer::new(expr);
 
         let result = tokenizer.collect::<Result<Vec<Token>, TokenizingError>>().unwrap_err();
-
         assert_eq!(result, TokenizingError::InvalidNumber);
+
+        let error_msg = format!("{}", result);
+        assert_eq!(error_msg, "Invalid number format");
     }
 }
