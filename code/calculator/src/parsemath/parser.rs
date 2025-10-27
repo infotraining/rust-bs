@@ -1,12 +1,15 @@
+use std::fmt::format;
 use crate::parsemath::ast::Expression;
 use crate::parsemath::token::Token;
 use crate::parsemath::tokenizer::{Tokenizer, TokenizingError};
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq, Copy, Clone)]
+#[derive(Error, Debug, PartialEq, Clone)]
 pub enum ParserError {
     #[error("Syntax error: {0}")]
     UnexpectedToken(#[from] TokenizingError),
+    #[error("Syntax error: {0}")]
+    SyntaxError(String)
 }
 
 #[derive(Debug)]
@@ -28,85 +31,84 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<Expression, ParserError> {
         let expression = self.expression();
-
-        Ok(expression)
+        expression
     }
 
-    fn expression(&mut self) -> Expression {
+    fn expression(&mut self) -> Result<Expression, ParserError> {
         let expression = self.term();
 
         expression
     }
 
-    fn term(&mut self) -> Expression {
-        let mut expression = self.factor();
+    fn term(&mut self) -> Result<Expression, ParserError> {
+        let mut expression = self.factor()?;
 
         loop {
             match self.peek() {
                 Some(Token::Plus) => {
                     self.consume();
-                    let right = self.factor();
+                    let right = self.factor()?;
                     expression = Expression::Add(Box::new(expression), Box::new(right));
                 }
                 Some(Token::Minus) => {
                     self.consume();
-                    let right = self.factor();
+                    let right = self.factor()?;
                     expression = Expression::Subtract(Box::new(expression), Box::new(right));
                 }
                 _ => break,
             }
         }
 
-        expression
+        Ok(expression)
     }
 
-    fn factor(&mut self) -> Expression {
-        let mut expression = self.unary();
+    fn factor(&mut self) -> Result<Expression, ParserError> {
+        let mut expression = self.unary()?;
 
         loop {
             match self.peek() {
                 Some(Token::Star) => {
                     self.consume();
-                    let right = self.unary();
+                    let right = self.unary()?;
                     expression = Expression::Multiply(Box::new(expression), Box::new(right));
                 }
                 Some(Token::Slash) => {
                     self.consume();
-                    let right = self.unary();
+                    let right = self.unary()?;
                     expression = Expression::Divide(Box::new(expression), Box::new(right));
                 }
                 _ => break,
             }
         }
 
-        expression
+        Ok(expression)
     }
 
-    fn unary(&mut self) -> Expression {
+    fn unary(&mut self) -> Result<Expression, ParserError> {
         if let Some(Token::Minus) = self.peek() {
             self.consume();
 
-            let right = self.unary();
-            return Expression::Negate(Box::new(right));
+            let right = self.unary()?;
+            return Ok(Expression::Negate(Box::new(right)));
         }
 
-        return self.primary();
+        self.primary()
     }
 
-    fn primary(&mut self) -> Expression {
+    fn primary(&mut self) -> Result<Expression, ParserError> {
         let expression = match self.next() {
             Some(Token::Number(n)) => Expression::Number(n),
             Some(Token::LeftParen) => {
-                let expression = self.expression();
-                self.consume_expected(Token::RightParen, "Expect ')' after expression.");
+                let expression = self.expression()?;
+                self.consume_expected(Token::RightParen, "Expect ')' after expression.")?;
                 Expression::Grouping(Box::new(expression))
             }
-            _ => panic!("Syntax error. Expected number or '('."),
+            _ => return Err(ParserError::SyntaxError("Expected number or '('.".to_string())),
         };
 
         //self.advance();
 
-        expression
+        Ok(expression)
     }
 
     // fn match_token(&mut self, expected: Token) -> bool {
@@ -131,14 +133,14 @@ impl Parser {
         }
     }
 
-    fn consume_expected(&mut self, expected: Token, context: & str) {
+    fn consume_expected(&mut self, expected: Token, context: & str) -> Result<(), ParserError> {
         if let Some(token) = self.next() {
             if token == expected {
-                return;
+                return Ok(());
             }
         }
 
-        panic!("{}", context);
+        Err(ParserError::SyntaxError(format!("{}", context)))
     }
 
     // fn advance(&mut self) -> Token {
@@ -324,20 +326,31 @@ mod tests {
     #[rstest]
     #[case::lb_1("(1")]
     #[case::lb_lb_lb_1_rb_2_rb("(((1)2)")]
-    #[should_panic(expected = "Expect ')' after expression.")]
     fn parse_unclosed_bracket(#[case] expression: &str) {
         let mut parser = Parser::new(expression).unwrap();
-        let _ = parser.parse().unwrap();
+        let parser_error = parser.parse().unwrap_err();
+
+        assert_eq!(parser_error, ParserError::SyntaxError(r#"Expect ')' after expression."#.to_string()));
     }
+
+    // #[rstest]
+    // #[case::lb_1_plus_2_rb_rb("(1))")]
+    // #[case::lb_1_plus_2_rb_rb("(1))+2")]
+    // fn parse_too_many_closing_brackets(#[case] expression: &str) {
+    //     let mut parser = Parser::new(expression).unwrap();
+    //     let parser_error = parser.parse().unwrap_err();
+    //
+    //     assert_eq!(parser_error, ParserError::SyntaxError(r#"Too many ')'."#.to_string()));
+    // }
 
     #[rstest]
     #[case::expr_plus_plus("++")]
     #[case::expr_1_minus("1-")]
     #[case::expr_rb_1(")1")]
-    #[should_panic(expected = "Syntax error. Expected number or '('.")]
     fn parse_invalid_expression(#[case] expression: &str) {
         let mut parser = Parser::new(expression).unwrap();
-        let _ = parser.parse().unwrap();
+        let parser_error = parser.parse().unwrap_err();
+        assert_eq!(parser_error, ParserError::SyntaxError(r#"Expected number or '('."#.to_string()));
     }
 
     #[rstest]

@@ -30,13 +30,18 @@ impl<'a> Calculator<'a> {
 
             match Parser::new(&input)  {
                 Ok(mut parser) => {
-                    let ast = parser.parse().unwrap();
-                    let result = ast.evaluate();
-
-                    self.console.println(&format!("{}", result));
+                    match parser.parse() {
+                        Ok(ast) => {
+                            let result = ast.evaluate();
+                            self.console.println(&format!("{}", result));
+                        }
+                        Err(error) => {
+                            self.console.println(&format!("{}", error));
+                        }
+                    }
                 }
-                Err(e) => {
-                    self.console.println(&format!("{}", e));
+                Err(error) => {
+                    self.console.println(&format!("{}", error));
                 }
             }
         }
