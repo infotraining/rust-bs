@@ -1,4 +1,3 @@
-use std::fmt::format;
 use crate::parsemath::ast::Expression;
 use crate::parsemath::token::Token;
 use crate::parsemath::tokenizer::{Tokenizer, TokenizingError};
@@ -16,6 +15,7 @@ pub enum ParserError {
 pub struct Parser {
     tokens: Vec<Token>,
     current_token_index: usize,
+    bracket_count: usize,
 }
 
 impl Parser {
@@ -26,6 +26,7 @@ impl Parser {
         Ok(Parser {
             tokens,
             current_token_index: 0,
+            bracket_count: 0,
         })
     }
 
@@ -55,6 +56,12 @@ impl Parser {
                     let right = self.factor()?;
                     expression = Expression::Subtract(Box::new(expression), Box::new(right));
                 }
+                Some(Token::RightParen) if self.bracket_count == 0 => {
+                    return Err(ParserError::SyntaxError(r#"Too many ')'."#.to_string()));
+                },
+                Some(Token::LeftParen) if self.bracket_count == 0 => {
+                    return Err(ParserError::SyntaxError(r#"Unexpected '('."#.to_string()));
+                }
                 _ => break,
             }
         }
@@ -76,6 +83,9 @@ impl Parser {
                     self.consume();
                     let right = self.unary()?;
                     expression = Expression::Divide(Box::new(expression), Box::new(right));
+                },
+                Some(Token::RightParen) if self.bracket_count == 0 => {
+                    return Err(ParserError::SyntaxError(r#"Too many ')'."#.to_string()));
                 }
                 _ => break,
             }
@@ -99,8 +109,9 @@ impl Parser {
         let expression = match self.next() {
             Some(Token::Number(n)) => Expression::Number(n),
             Some(Token::LeftParen) => {
+                self.bracket_count += 1;
                 let expression = self.expression()?;
-                self.consume_expected(Token::RightParen, "Expect ')' after expression.")?;
+                self.consume_right_paren()?;
                 Expression::Grouping(Box::new(expression))
             }
             _ => return Err(ParserError::SyntaxError("Expected number or '('.".to_string())),
@@ -111,45 +122,22 @@ impl Parser {
         Ok(expression)
     }
 
-    // fn match_token(&mut self, expected: Token) -> bool {
-    //     if self.check(expected) {
-    //         self.advance();
-    //         return true;
-    //     }
-    //     false
-    // }
-
-    // fn check(&mut self, expected: Token) -> bool {
-    //     if self.is_at_end() {
-    //         return false;
-    //     }
-    //
-    //     return self.peek() == expected;
-    // }
-
     fn consume(&mut self) {
         if !self.is_at_end() {
             self.current_token_index += 1;
         }
     }
 
-    fn consume_expected(&mut self, expected: Token, context: & str) -> Result<(), ParserError> {
-        if let Some(token) = self.next() {
-            if token == expected {
-                return Ok(());
-            }
+    fn consume_right_paren(&mut self) -> Result<(), ParserError> {
+        if let Some(Token::RightParen) = self.next() {
+            self.bracket_count -= 1;
+            return Ok(());
         }
-
-        Err(ParserError::SyntaxError(format!("{}", context)))
+        else
+        {
+            Err(ParserError::SyntaxError("Expect ')' after expression.".to_string()))
+        }
     }
-
-    // fn advance(&mut self) -> Token {
-    //     if !self.is_at_end() {
-    //         self.current_token_index += 1;
-    //     }
-    //
-    //     return self.previous();
-    // }
 
     fn is_at_end(&self) -> bool {
         self.current_token_index >= self.tokens.len()
@@ -333,15 +321,15 @@ mod tests {
         assert_eq!(parser_error, ParserError::SyntaxError(r#"Expect ')' after expression."#.to_string()));
     }
 
-    // #[rstest]
-    // #[case::lb_1_plus_2_rb_rb("(1))")]
-    // #[case::lb_1_plus_2_rb_rb("(1))+2")]
-    // fn parse_too_many_closing_brackets(#[case] expression: &str) {
-    //     let mut parser = Parser::new(expression).unwrap();
-    //     let parser_error = parser.parse().unwrap_err();
-    //
-    //     assert_eq!(parser_error, ParserError::SyntaxError(r#"Too many ')'."#.to_string()));
-    // }
+    #[rstest]
+    #[case::lb_1_plus_2_rb_rb("(1))")]
+    #[case::lb_1_plus_2_rb_rb("(1))+2")]
+    fn parse_too_many_closing_brackets(#[case] expression: &str) {
+        let mut parser = Parser::new(expression).unwrap();
+        let parser_error = parser.parse().unwrap_err();
+
+        assert_eq!(parser_error, ParserError::SyntaxError(r#"Too many ')'."#.to_string()));
+    }
 
     #[rstest]
     #[case::expr_plus_plus("++")]
@@ -356,8 +344,17 @@ mod tests {
     #[rstest]
     fn parsing_error_unexpected_tokens() {
         let expr = "2#";
-        let mut parser_error = Parser::new(expr).unwrap_err();
+        let parser_error = Parser::new(expr).unwrap_err();
         assert_eq!(parser_error, ParserError::UnexpectedToken(TokenizingError::InvalidCharacter('#')));
         assert_eq!(format!("{}", parser_error), "Syntax error: Unexpected token \'#\'");
+    }
+
+    #[rstest]
+    fn bug() {
+        let expr = "(1)(";
+        let mut parser = Parser::new(expr).unwrap();
+        let parser_error = parser.parse().unwrap_err();
+        assert_eq!(parser_error, ParserError::SyntaxError("Unexpected \'(\'.".to_string()));
+
     }
 }
