@@ -117,8 +117,6 @@ impl Parser {
             _ => return Err(ParserError::SyntaxError("Expected number or '('.".to_string())),
         };
 
-        //self.advance();
-
         Ok(expression)
     }
 
@@ -155,10 +153,6 @@ impl Parser {
         self.current_token_index += 1;
         return token;
     }
-
-    // fn previous(&self) -> Token {
-    //     self.tokens[self.current_token_index - 1].clone()
-    // }
 }
 
 #[cfg(test)]
