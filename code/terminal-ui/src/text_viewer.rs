@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use crate::doc::Doc;
-use termion::event::Key;
+use termion::event::{Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{color, style};
@@ -212,7 +212,6 @@ impl TextViewer {
                             .remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1);
                     }
                 }
-
                 Key::Backspace => {
                     if self.adjusted_cursor.x == 1 && self.adjusted_cursor.y > 1 {
                         let target_cursor = Coordinates {
@@ -256,7 +255,7 @@ impl TextViewer {
     }
 
     fn cursor_down(&mut self) {
-        if self.cursor.y  < self.doc.length() {
+        if self.cursor.y < self.doc.length() {
             self.cursor.y += 1;
         }
         self.adjust_cursor_to_line_length();
