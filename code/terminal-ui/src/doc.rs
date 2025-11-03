@@ -23,6 +23,13 @@ impl Doc {
         }
     }
 
+    pub fn from_lines(lines: Vec<String>) -> Self {
+        Self {
+            lines,
+            file_name: None,
+        }
+    }
+
     pub fn load_from_file(filename: &str) -> Result<Doc, io::Error> {
         let mut doc = Doc {
             lines: vec![],
@@ -42,6 +49,10 @@ impl Doc {
         self.file_name.as_ref()
     }
 
+    pub fn lines(&self) -> &Vec<String> {
+        &self.lines
+    }
+
     pub fn insert_char(&mut self, line: usize, col: usize, ch: char) {
         if line >= self.lines.len() {
             return;
@@ -53,16 +64,45 @@ impl Doc {
         target_line.insert(col, ch);
     }
 
-    pub fn remove(&mut self, line: usize, col: usize, count: usize) {
+    pub fn remove(&mut self, line: usize, col: usize) {
         if line >= self.lines.len() {
             return;
         }
+        // if col == 0 {
+        //     if line == 0 {
+        //         return;
+        //     }
+        //     let current_line_content = self.lines.remove(line);
+        //     self.lines[line - 1].push_str(&current_line_content);
+        //     return;
+        // }
+
         let target_line = &mut self.lines[line];
         if col >= target_line.len() {
             return;
         }
-        let end = usize::min(col + count, target_line.len());
+        let end = usize::min(col + 1, target_line.len());
         target_line.drain(col..end);
+    }
+
+    pub fn insert_new_line(&mut self, line: usize, col: usize) {
+        if line >= self.lines.len() {
+            return;
+        }
+        let target_line = &mut self.lines[line];
+        if col > target_line.len() {
+            return;
+        }
+        let new_line_content = target_line.split_off(col);
+        self.lines.insert(line + 1, new_line_content);
+    }
+
+    pub fn join_with_next_line(&mut self, line: usize) {
+        if line + 1 >= self.lines.len() {
+            return;
+        }
+        let next_line_content = self.lines.remove(line + 1);
+        self.lines[line].push_str(&next_line_content);
     }
 }
 
@@ -136,10 +176,32 @@ mod tests {
     }
 
     #[test]
-    fn removing_chars_from_middle_of_line() {
+    fn removing_char_from_middle_of_line() {
         let mut doc = Doc::new();
         assert!(doc[0] == "Hello World!");
-        doc.remove(0, 5, 1);
+        doc.remove(0, 5,);
         assert_eq!(doc[0], "HelloWorld!");
+    }
+
+    #[test]
+    fn join_the_lines() {
+        let mut doc = Doc::from_lines(vec!["Line1".to_string(), "Line2".to_string()]);
+        assert_eq!(doc.lines(), &vec!["Line1".to_string(), "Line2".to_string()]);
+        assert_eq!(doc.length(), 2);
+
+        doc.join_with_next_line(0);
+        assert_eq!(doc[0], "Line1Line2");
+        assert_eq!(doc.length(), 1);
+    }
+
+    #[test]
+    fn inserting_new_line_in_the_middle_of_line() {
+        let mut doc = Doc::new();
+        assert_eq!(doc[0], "Hello World!");
+        assert_eq!(doc.length(), 1);
+        doc.insert_new_line(0, 5);
+        assert_eq!(doc[0], "Hello");
+        assert_eq!(doc[1], " World!");
+        assert_eq!(doc.length(), 2);
     }
 }

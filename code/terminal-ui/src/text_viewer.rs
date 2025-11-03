@@ -177,17 +177,42 @@ impl TextViewer {
                 }
                 Key::Right => {
                     self.cursor_right();
-                },
+                }
+                Key::Char('\n') => {
+                    self.doc
+                        .insert_new_line(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1);
+                    self.cursor.y += 1;
+                    self.cursor.x = 1;
+                    self.adjust_cursor_to_line_length();
+                }
                 Key::Char(c) => {
-                    self.doc.insert_char(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1, c);
+                    self.doc
+                        .insert_char(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1, c);
                     self.cursor_right();
-                },
+                }
+                Key::Delete => {
+                    if self.adjusted_cursor.x - 1 >= self.doc[self.adjusted_cursor.y - 1].len() {
+                        self.doc.join_with_next_line(self.adjusted_cursor.y - 1);
+                    } else {
+                        self.doc
+                            .remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1);
+                    }
+                }
+
                 Key::Backspace => {
-                    if self.cursor.x > 1 {
-                        self.doc.remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 2, 1);
+                    if self.cursor.x == 1 && self.cursor.y > 1 {
+                        let target_cursor = Coordinates {
+                            x: self.doc[self.cursor.y - 2].len() + 1,
+                            y: self.cursor.y - 1,
+                        };
+                        self.doc.join_with_next_line(self.cursor.y - 2);
+                        self.update_cursor(target_cursor);
+                    } else if self.cursor.x > 1 {
+                        self.doc
+                            .remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 2);
                         self.cursor_left();
                     }
-                },
+                }
                 _ => {}
             }
             self.show_document();
@@ -245,5 +270,10 @@ impl TextViewer {
         }
 
         self.adjusted_cursor = adjusted_pos;
+    }
+
+    fn update_cursor(&mut self, target: Coordinates) {
+        self.cursor = target;
+        self.adjust_cursor_to_line_length();
     }
 }
