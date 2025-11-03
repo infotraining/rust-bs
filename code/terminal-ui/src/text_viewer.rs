@@ -1,45 +1,12 @@
-use std::fs::read_to_string;
 use std::io::{self, Write};
 
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{color, style};
+use crate::doc::Doc;
 
-pub struct Doc {
-    lines: Vec<String>,
-    file_name: Option<String>,
-}
-
-impl Doc {
-    pub fn new() -> Self {
-        Self {
-            lines: vec!["Hello World!".to_string()],
-            file_name: None,
-        }
-    }
-
-    pub fn load_from_file(filename: &str) -> Result<Doc, io::Error> {
-        let mut doc = Doc {
-            lines: vec![],
-            file_name: None,
-        };
-        let file_content = read_to_string(filename)?;
-        doc.lines = file_content.lines().map(|l| l.to_string()).collect();
-        doc.file_name = Some(filename.to_string());
-        Ok(doc)
-    }
-
-    pub fn length(&self) -> usize {
-        self.lines.len()
-    }
-
-    pub fn file_name(&self) -> Option<&String> {
-        self.file_name.as_ref()
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Coordinates {
     x: usize,
     y: usize,
@@ -65,8 +32,8 @@ pub struct Box {
 
 pub struct TextViewer {
     doc: Doc,
-    // doc_length: usize,
-    cursor_pos: Coordinates,
+    cursor: Coordinates,
+    adjusted_cursor: Coordinates,
     terminal_size: Box,
 }
 
@@ -115,8 +82,9 @@ impl TextViewBuilder {
 
         TextViewer {
             doc,
-            cursor_pos,
+            cursor: cursor_pos,
             terminal_size: self.terminal_size,
+            adjusted_cursor: cursor_pos,
         }
     }
 }
@@ -126,9 +94,8 @@ impl TextViewer {
         let offset_top = 2 as usize;
         let offset_bottom = 3 as usize;
 
-        let pos = &self.cursor_pos;
-
-        let (old_x, old_y) = pos.into();
+        let pos = &self.cursor;
+        let (adjusted_x, adjusted_y) = self.adjusted_cursor.into();
 
         print!(
             "{}{}{}",
@@ -150,7 +117,7 @@ impl TextViewer {
                     "{}",
                     termion::cursor::Goto(1, (line_index + offset_top) as u16)
                 );
-                print!("{}", self.doc.lines[line_index]);
+                print!("{}", self.doc[line_index]);
             }
         } else {
             if pos.y <= self.terminal_size.height - offset_bottom {
@@ -159,7 +126,7 @@ impl TextViewer {
                         "{}",
                         termion::cursor::Goto(1, (line_index + offset_top) as u16)
                     );
-                    print!("{}", self.doc.lines[line_index]);
+                    print!("{}", self.doc[line_index]);
                 }
             } else {
                 let line_index_offset = pos.y - (self.terminal_size.height - offset_bottom);
@@ -171,7 +138,7 @@ impl TextViewer {
                             (line_index - line_index_offset + offset_top) as u16
                         )
                     );
-                    print!("{}", self.doc.lines[line_index]);
+                    print!("{}", self.doc[line_index]);
                 }
             }
         }
@@ -184,8 +151,8 @@ impl TextViewer {
             "{}-- {} -- Cursor at ({}, {}){}",
             color::Bg(color::Black),
             self.doc.file_name().unwrap_or(&"Untitled".to_string()),
-            old_x,
-            old_y,
+            adjusted_x,
+            adjusted_y,
             style::Reset
         );
 
@@ -221,8 +188,8 @@ impl TextViewer {
 
     fn show_cursor(&self) {
         // clip position to terminal size
-        let clipped_x = self.cursor_pos.x.min(self.terminal_size.width - 3);
-        let clipped_y = self.cursor_pos.y.min(self.terminal_size.height - 3);
+        let clipped_x = self.adjusted_cursor.x.min(self.terminal_size.width - 3);
+        let clipped_y = self.adjusted_cursor.y.min(self.terminal_size.height - 3);
 
         println!(
             "{}",
@@ -231,24 +198,43 @@ impl TextViewer {
     }
 
     fn cursor_up(&mut self) {
-        if self.cursor_pos.y > 1 {
-            self.cursor_pos.y -= 1;
+        if self.cursor.y > 1 {
+            self.cursor.y -= 1;
         }
+        self.adjust_cursor_to_line_length();
     }
 
     fn cursor_down(&mut self) {
-        if self.cursor_pos.y < self.doc.length() {
-            self.cursor_pos.y += 1;
+        if self.cursor.y < self.doc.length() {
+            self.cursor.y += 1;
         }
+        self.adjust_cursor_to_line_length();
     }
 
     fn cursor_left(&mut self) {
-        if self.cursor_pos.x > 1 {
-            self.cursor_pos.x -= 1;
+        if self.cursor.x > 1 {
+            self.cursor.x -= 1;
         }
+        self.adjust_cursor_to_line_length();
+
     }
 
     fn cursor_right(&mut self) {
-        self.cursor_pos.x += 1;
+        if self.cursor.x <= self.doc[self.cursor.y - 1].len() {
+            self.cursor.x += 1;
+        }
+        self.adjust_cursor_to_line_length();
+    }
+
+    fn adjust_cursor_to_line_length(&mut self) {
+        let line_length = self.doc[self.cursor.y - 1].len();
+
+        let mut adjusted_pos = self.cursor.clone();
+
+        if self.cursor.x > line_length + 1 {
+            adjusted_pos.x = line_length + 1;
+        }
+
+        self.adjusted_cursor = adjusted_pos;
     }
 }
