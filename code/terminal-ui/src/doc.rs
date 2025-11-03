@@ -41,4 +41,105 @@ impl Doc {
     pub fn file_name(&self) -> Option<&String> {
         self.file_name.as_ref()
     }
+
+    pub fn insert_char(&mut self, line: usize, col: usize, ch: char) {
+        if line >= self.lines.len() {
+            return;
+        }
+        let target_line = &mut self.lines[line];
+        if col > target_line.len() {
+            return;
+        }
+        target_line.insert(col, ch);
+    }
+
+    pub fn remove(&mut self, line: usize, col: usize, count: usize) {
+        if line >= self.lines.len() {
+            return;
+        }
+        let target_line = &mut self.lines[line];
+        if col >= target_line.len() {
+            return;
+        }
+        let end = usize::min(col + count, target_line.len());
+        target_line.drain(col..end);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+    use io::Write;
+
+    #[test]
+    fn new_doc_has_default_content() {
+        let doc = Doc::new();
+        assert_eq!(doc.length(), 1);
+        assert_eq!(doc[0], "Hello World!");
+        assert_eq!(doc.file_name(), None);
+    }
+
+    #[test]
+    fn loading_content_from_file() {
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "Line 1").unwrap();
+        writeln!(temp_file, "Line 2").unwrap();
+        writeln!(temp_file, "Line 3").unwrap();
+
+        let doc = Doc::load_from_file(temp_file.path().to_str().unwrap()).unwrap();
+        assert_eq!(doc.length(), 3);
+        assert_eq!(doc[0], "Line 1");
+        assert_eq!(doc[1], "Line 2");
+        assert_eq!(doc[2], "Line 3");
+        assert!(doc.file_name().is_some());
+    }
+
+    #[test]
+    fn loading_empty_file_creates_empty_doc() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let doc = Doc::load_from_file(temp_file.path().to_str().unwrap()).unwrap();
+        assert_eq!(doc.length(), 0);
+    }
+
+    #[test]
+    fn loading_nonexistent_file_returns_error() {
+        let result = Doc::load_from_file("/nonexistent/path/to/file.txt");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn indexing_of_lines() {
+        let doc = Doc::new();
+        assert_eq!(doc[0], "Hello World!");
+    }
+
+    #[test]
+    fn inserting_char_in_the_middle_of_a_line() {
+        let mut doc = Doc::new();
+        doc.insert_char(0, 6, 'X');
+        assert_eq!(doc[0], "Hello XWorld!");
+    }
+
+    #[test]
+    fn inserting_char_at_end_of_line() {
+        let mut doc = Doc::new();
+        doc.insert_char(0, 12, '!');
+        assert_eq!(doc[0], "Hello World!!");
+    }   
+
+    #[test]
+    fn inserting_char_at_beginning_of_line() {
+        let mut doc = Doc::new();
+        doc.insert_char(0, 0, 'Y');
+        assert_eq!(doc[0], "YHello World!");
+    }
+
+    #[test]
+    fn removing_chars_from_middle_of_line() {
+        let mut doc = Doc::new();
+        assert!(doc[0] == "Hello World!");
+        doc.remove(0, 5, 1);
+        assert_eq!(doc[0], "HelloWorld!");
+    }
 }

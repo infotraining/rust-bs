@@ -1,10 +1,10 @@
 use std::io::{self, Write};
 
+use crate::doc::Doc;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{color, style};
-use crate::doc::Doc;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Coordinates {
@@ -177,7 +177,17 @@ impl TextViewer {
                 }
                 Key::Right => {
                     self.cursor_right();
-                }
+                },
+                Key::Char(c) => {
+                    self.doc.insert_char(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1, c);
+                    self.cursor_right();
+                },
+                Key::Backspace => {
+                    if self.cursor.x > 1 {
+                        self.doc.remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 2, 1);
+                        self.cursor_left();
+                    }
+                },
                 _ => {}
             }
             self.show_document();
@@ -216,7 +226,6 @@ impl TextViewer {
             self.cursor.x -= 1;
         }
         self.adjust_cursor_to_line_length();
-
     }
 
     fn cursor_right(&mut self) {
