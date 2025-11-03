@@ -1,5 +1,5 @@
-use std::fs::read_to_string;
-use std::io;
+use std::fs::{File, read_to_string};
+use std::io::{self, Write};
 use std::ops::Index;
 
 pub struct Doc {
@@ -106,10 +106,26 @@ impl Doc {
         let next_line_content = self.lines.remove(line + 1);
         self.lines[line].push_str(&next_line_content);
     }
+
+    #[allow(dead_code)]
+    pub fn save_to_file(&self, path: &str) -> Result<(), io::Error> {
+        let mut file = File::create(path)?;
+        for line in &self.lines {
+            writeln!(file, "{}", line)?;
+        }
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<(), io::Error> {
+        self.save_to_file(self.file_name.as_deref().unwrap_or("untitled.txt"))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
     use tempfile::NamedTempFile;
     use io::Write;
@@ -206,4 +222,56 @@ mod tests {
         assert_eq!(doc[1], " World!");
         assert_eq!(doc.length(), 2);
     }
+
+    #[test]
+    fn saving_content_to_file() {
+        let lines = vec!["Hello".to_string(), "World".to_string()];
+        let doc = Doc::from_lines(lines);
+        
+        doc.save_to_file("test_output.txt").unwrap();
+        
+        let loaded_doc = Doc::load_from_file("test_output.txt").unwrap();
+        assert_eq!(loaded_doc.lines(), &vec!["Hello".to_string(), "World".to_string()]);
+
+        std::fs::remove_file("test_output.txt").unwrap();
+    }
+
+    #[test]
+    fn saving_content_to_invalid_path_returns_error() {
+        let lines = vec!["Hello".to_string(), "World".to_string()];
+        let doc = Doc::from_lines(lines);
+        
+        let result = doc.save_to_file("/invalid/path/test_output.txt");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn saving_modiefied_content_to_file() {
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "Line 1").unwrap();
+        writeln!(temp_file, "Line 2").unwrap();
+        writeln!(temp_file, "Line 3").unwrap();
+
+        let mut doc = Doc::load_from_file(temp_file.path().to_str().unwrap()).unwrap();
+
+        doc.insert_char(1, 5, 'X');
+        doc.remove(0, 4);
+
+        doc.save().unwrap();
+
+        let reloaded_doc = Doc::load_from_file(temp_file.path().to_str().unwrap()).unwrap();
+        assert_eq!(reloaded_doc.lines(), &vec!["Line1".to_string(), "Line X2".to_string(), "Line 3".to_string()]);
+    }
+
+    #[test]
+    fn saving_without_file_saves_to_untitled() {
+        let doc = Doc::from_lines(vec!["Hello".to_string(), "World".to_string()]);
+        doc.save().unwrap();
+        
+        let reloaded_doc = Doc::load_from_file("untitled.txt").unwrap();
+        assert_eq!(reloaded_doc.lines(), &vec!["Hello".to_string(), "World".to_string()]);
+
+        fs::remove_file("untitled.txt").unwrap();
+    }
+
 }

@@ -1,8 +1,8 @@
 use std::io::{self, Write};
 
 use crate::doc::Doc;
-use termion::event::{Key};
-use termion::input::TermRead;
+use termion::event::Key;
+use termion::input::{TermRead};
 use termion::raw::IntoRawMode;
 use termion::{color, style};
 
@@ -227,6 +227,9 @@ impl TextViewer {
                         );
                         self.cursor_left();
                     }
+                }
+                Key::Ctrl('s') => {
+                    self.doc.save().unwrap();
                 }
                 _ => {}
             }
