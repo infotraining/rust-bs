@@ -90,6 +90,22 @@ impl TextViewBuilder {
 }
 
 impl TextViewer {
+    fn print_line(&self, line_index: usize, offset_top: usize) {
+        let max_line_length = self.terminal_size.width - 3;
+
+        print!(
+            "{}",
+            termion::cursor::Goto(1, (line_index + offset_top) as u16)
+        );
+
+        if self.doc[line_index].len() > max_line_length {
+            let truncated_line = &self.doc[line_index][..max_line_length];
+            print!("{}", truncated_line.to_string() + "...");
+        } else {
+            print!("{}", self.doc[line_index]);
+        }
+    }
+
     pub fn show_document(&mut self) {
         let offset_top = 2 as usize;
         let offset_bottom = 3 as usize;
@@ -113,32 +129,17 @@ impl TextViewer {
 
         if self.doc.length() < self.terminal_size.height - offset_top {
             for line_index in 0..self.doc.length() {
-                print!(
-                    "{}",
-                    termion::cursor::Goto(1, (line_index + offset_top) as u16)
-                );
-                print!("{}", self.doc[line_index]);
+                self.print_line(line_index, offset_top);
             }
         } else {
             if pos.y <= self.terminal_size.height - offset_bottom {
                 for line_index in 0..(self.terminal_size.height - offset_bottom) {
-                    print!(
-                        "{}",
-                        termion::cursor::Goto(1, (line_index + offset_top) as u16)
-                    );
-                    print!("{}", self.doc[line_index]);
+                    self.print_line(line_index, offset_top);
                 }
             } else {
                 let line_index_offset = pos.y - (self.terminal_size.height - offset_bottom);
                 for line_index in line_index_offset..pos.y {
-                    print!(
-                        "{}",
-                        termion::cursor::Goto(
-                            1,
-                            (line_index - line_index_offset + offset_top) as u16
-                        )
-                    );
-                    print!("{}", self.doc[line_index]);
+                    self.print_line(line_index, offset_top);
                 }
             }
         }
@@ -147,12 +148,15 @@ impl TextViewer {
             "{}",
             termion::cursor::Goto(0, (self.terminal_size.height - 2) as u16)
         );
+
         println!(
-            "{}-- {} -- Cursor at ({}, {}){}",
+            "{}-- {} -- Cursor at ({}, {}) - ({}, {}){}",
             color::Bg(color::Black),
             self.doc.file_name().unwrap_or(&"Untitled".to_string()),
             adjusted_x,
             adjusted_y,
+            self.cursor.x,
+            self.cursor.y,
             style::Reset
         );
 
@@ -178,6 +182,19 @@ impl TextViewer {
                 Key::Right => {
                     self.cursor_right();
                 }
+                Key::Home => {
+                    self.update_cursor(Coordinates {
+                        x: 1,
+                        y: self.cursor.y,
+                    });
+                }
+                Key::End => {
+                    let line_length = self.doc[self.cursor.y - 1].len();
+                    self.update_cursor(Coordinates {
+                        x: line_length + 1,
+                        y: self.cursor.y,
+                    });
+                }
                 Key::Char('\n') => {
                     self.doc
                         .insert_new_line(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 1);
@@ -200,16 +217,18 @@ impl TextViewer {
                 }
 
                 Key::Backspace => {
-                    if self.cursor.x == 1 && self.cursor.y > 1 {
+                    if self.adjusted_cursor.x == 1 && self.adjusted_cursor.y > 1 {
                         let target_cursor = Coordinates {
-                            x: self.doc[self.cursor.y - 2].len() + 1,
-                            y: self.cursor.y - 1,
+                            x: self.doc[self.adjusted_cursor.y - 2].len() + 1,
+                            y: self.adjusted_cursor.y - 1,
                         };
-                        self.doc.join_with_next_line(self.cursor.y - 2);
+                        self.doc.join_with_next_line(self.adjusted_cursor.y - 2);
                         self.update_cursor(target_cursor);
-                    } else if self.cursor.x > 1 {
-                        self.doc
-                            .remove(self.adjusted_cursor.y - 1, self.adjusted_cursor.x - 2);
+                    } else if self.adjusted_cursor.x > 1 && self.adjusted_cursor.y >= 1 {
+                        self.doc.remove(
+                            self.adjusted_cursor.y.saturating_sub(1),
+                            self.adjusted_cursor.x.saturating_sub(2),
+                        );
                         self.cursor_left();
                     }
                 }
@@ -223,8 +242,8 @@ impl TextViewer {
 
     fn show_cursor(&self) {
         // clip position to terminal size
-        let clipped_x = self.adjusted_cursor.x.min(self.terminal_size.width - 3);
-        let clipped_y = self.adjusted_cursor.y.min(self.terminal_size.height - 3);
+        let clipped_x = self.adjusted_cursor.x.min(self.terminal_size.width - 2);
+        let clipped_y = self.adjusted_cursor.y.min(self.terminal_size.height - 2);
 
         println!(
             "{}",

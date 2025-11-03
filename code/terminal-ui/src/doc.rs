@@ -23,6 +23,7 @@ impl Doc {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_lines(lines: Vec<String>) -> Self {
         Self {
             lines,
@@ -49,6 +50,7 @@ impl Doc {
         self.file_name.as_ref()
     }
 
+    #[allow(dead_code)]
     pub fn lines(&self) -> &Vec<String> {
         &self.lines
     }
