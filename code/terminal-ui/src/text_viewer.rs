@@ -90,19 +90,16 @@ impl TextViewBuilder {
 }
 
 impl TextViewer {
-    fn print_line(&self, line_index: usize, offset_top: usize) {
+    fn print_line(&self, terminal_line_index: usize, doc_line_index: usize) {
         let max_line_length = self.terminal_size.width - 3;
 
-        print!(
-            "{}",
-            termion::cursor::Goto(1, (line_index + offset_top) as u16)
-        );
+        print!("{}", termion::cursor::Goto(1, terminal_line_index as u16));
 
-        if self.doc[line_index].len() > max_line_length {
-            let truncated_line = &self.doc[line_index][..max_line_length];
+        if self.doc[doc_line_index].len() > max_line_length {
+            let truncated_line = &self.doc[doc_line_index][..max_line_length];
             print!("{}", truncated_line.to_string() + "...");
         } else {
-            print!("{}", self.doc[line_index]);
+            print!("{}", self.doc[doc_line_index]);
         }
     }
 
@@ -129,17 +126,17 @@ impl TextViewer {
 
         if self.doc.length() < self.terminal_size.height - offset_top {
             for line_index in 0..self.doc.length() {
-                self.print_line(line_index, offset_top);
+                self.print_line(line_index + offset_top, line_index);
             }
         } else {
             if pos.y <= self.terminal_size.height - offset_bottom {
                 for line_index in 0..(self.terminal_size.height - offset_bottom) {
-                    self.print_line(line_index, offset_top);
+                    self.print_line(line_index + offset_top, line_index);
                 }
             } else {
                 let line_index_offset = pos.y - (self.terminal_size.height - offset_bottom);
                 for line_index in line_index_offset..pos.y {
-                    self.print_line(line_index, offset_top);
+                    self.print_line(line_index - line_index_offset + offset_top, line_index);
                 }
             }
         }
@@ -243,7 +240,7 @@ impl TextViewer {
     fn show_cursor(&self) {
         // clip position to terminal size
         let clipped_x = self.adjusted_cursor.x.min(self.terminal_size.width - 2);
-        let clipped_y = self.adjusted_cursor.y.min(self.terminal_size.height - 2);
+        let clipped_y = self.adjusted_cursor.y.min(self.terminal_size.height - 3);
 
         println!(
             "{}",
@@ -259,7 +256,7 @@ impl TextViewer {
     }
 
     fn cursor_down(&mut self) {
-        if self.cursor.y < self.doc.length() {
+        if self.cursor.y  < self.doc.length() {
             self.cursor.y += 1;
         }
         self.adjust_cursor_to_line_length();
