@@ -51,7 +51,7 @@ impl<T> List<T> {
         List{ head: self.head.as_ref().and_then(|node| node.next.clone()) }
     }
 
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter { next: self.head.as_deref() }
     }
 }
@@ -84,6 +84,7 @@ impl<T> Drop for List<T> {
     }
 }
 
+#[cfg(test)]
 mod test_rc_list {
     use super::*;
 

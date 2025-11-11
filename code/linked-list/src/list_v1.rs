@@ -47,13 +47,13 @@ impl<T> LinkedList<T> {
         None
     }
 
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             next: self.head.as_ref().map(|node| &**node),
         }
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
             next: self.head.as_mut().map(|node| &mut **node),
         }
