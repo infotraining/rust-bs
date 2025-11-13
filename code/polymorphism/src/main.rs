@@ -1,10 +1,6 @@
 mod shapes;
 
-use shapes::traits::{Shape, Drawable, DrawableShape};
-use shapes::rectangle::Rectangle;
-use shapes::circle::Circle; 
-use shapes::point::Point;
-
+use shapes::prelude::{*};
 
 fn create_shapes() -> Vec<Box<dyn Shape>> {
     let mut shapes: Vec<Box<dyn Shape>> = Vec::new();
@@ -29,19 +25,26 @@ fn create_shapes() -> Vec<Box<dyn Shape>> {
 fn create_drawables() -> Vec<Box<dyn Drawable>> {
     let mut drawables: Vec<Box<dyn Drawable>> = Vec::new();
 
-    let rect = shapes::rectangle::Rectangle {
-        position: shapes::point::Point { x: 0, y: 0 },
+    let rect = Rectangle {
+        position: Point { x: 0, y: 0 },
         width: 10,
         height: 20
     };
 
-    let circle = shapes::circle::Circle {
-        position: shapes::point::Point { x: 5, y: 5 },
+    let circle = Circle {
+        position: Point { x: 5, y: 5 },
         radius: 15
     };
 
+    let triangle = Triangle::new(
+        Point { x: 1, y: 1 },
+        Point { x: 4, y: 1 },
+        Point { x: 1, y: 5 },
+    );
+
     drawables.push(Box::new(rect));
     drawables.push(Box::new(circle));
+    drawables.push(Box::new(triangle));
 
     drawables
 }
@@ -49,19 +52,26 @@ fn create_drawables() -> Vec<Box<dyn Drawable>> {
 fn create_drawable_shapes() -> Vec<Box<dyn DrawableShape>> {
     let mut shapes: Vec<Box<dyn DrawableShape>> = Vec::new();
 
-    let rect = shapes::rectangle::Rectangle {
-        position: shapes::point::Point { x: 0, y: 0 },
+    let rect = Rectangle {
+        position: Point { x: 0, y: 0 },
         width: 10,
         height: 20
     };
 
-    let circle = shapes::circle::Circle {
-        position: shapes::point::Point { x: 5, y: 5 },
+    let circle = Circle {
+        position: Point { x: 5, y: 5 },
         radius: 15
     };
 
+    let triangle = Triangle::new(
+        Point { x: 1, y: 1 },
+        Point { x: 4, y: 1 },
+        Point { x: 1, y: 5 },
+    );
+
     shapes.push(Box::new(rect));
     shapes.push(Box::new(circle));
+    shapes.push(Box::new(triangle));
 
     shapes
 }
