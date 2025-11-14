@@ -1,6 +1,9 @@
-pub trait Shape {
+use std::any::Any;
+
+pub trait Shape: Any {
     fn move_by(&mut self, dx: i32, dy: i32);
     fn area(&self) -> f64;
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub trait Drawable {

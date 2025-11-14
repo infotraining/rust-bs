@@ -18,6 +18,10 @@ impl Shape for Rectangle {
     fn area(&self) -> f64 {
         (self.width * self.height) as f64
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl Drawable for Rectangle {

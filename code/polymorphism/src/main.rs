@@ -111,10 +111,29 @@ fn use_drawable_shapes() {
     }    
 }
 
+fn downcasting() {
+    let shapes = create_drawable_shapes();
+
+    for shape in shapes.iter() {
+        if let Some(rect) = shape.as_any().downcast_ref::<Rectangle>() {
+            println!("Found a Rectangle at position: ({}, {})", rect.position.x, rect.position.y);
+        } else if let Some(circle) = shape.as_any().downcast_ref::<Circle>() {
+            println!("Found a Circle at position: ({}, {})", circle.position.x, circle.position.y);
+        } else if let Some(triangle) = shape.as_any().downcast_ref::<Triangle>() {
+            println!("Found a Triangle with vertices at: {}, {}, {}",
+                triangle.points[0], 
+                triangle.points[1],
+                triangle.points[2]);
+        }
+    }
+}
+
 fn main() {
     use_shapes();
     println!("{}", "-".repeat(30));
     use_drawables();
     println!("{}", "-".repeat(30));
     use_drawable_shapes();
+    println!("{}", "-".repeat(30));
+    downcasting();
 }

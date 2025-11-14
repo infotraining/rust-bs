@@ -16,6 +16,10 @@ impl Shape for Circle {
     fn area(&self) -> f64 {
         std::f64::consts::PI * (self.radius as f64) * (self.radius as f64)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl Drawable for Circle {

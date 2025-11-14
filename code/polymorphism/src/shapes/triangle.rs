@@ -32,6 +32,10 @@ impl Shape for Triangle {
         let s = (a + b + c) / 2.0;
         (s * (s - a) * (s - b) * (s - c)).sqrt()
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl Drawable for Triangle {
