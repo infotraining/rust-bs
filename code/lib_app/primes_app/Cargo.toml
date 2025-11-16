@@ -1,7 +1,0 @@
-[package]
-name = "primes_app"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-primes_lib = { path = "../primes_lib"}
