@@ -1,0 +1,6 @@
+[package]
+name = "compile-time-eval"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
