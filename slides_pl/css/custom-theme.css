@@ -1,0 +1,117 @@
+.reveal h1 {
+    text-shadow: 2px 8px 6px rgba(0, 0, 0, 0.2), 0px -5px 35px rgba(255, 255, 255, 0.3);
+}
+
+.reveal h2 {
+    text-shadow: 2px 8px 6px rgba(0, 0, 0, 0.2), 0px -5px 20px rgba(255, 255, 255, 0.3);
+}
+
+.reveal h3 {
+    text-shadow: 2px 8px 6px rgba(0, 0, 0, 0.2), 0px -5px 20px rgba(255, 255, 255, 0.3);
+}
+
+.reveal em {
+    font-family: "Fira Sans", "Open Sans";
+    font-weight: 600;
+    color: gold;
+}
+
+.reveal strong {
+    font-family: "Fira Sans", "Open Sans";
+    font-weight: 600;
+    color: gold;
+}
+
+.reveal ul li:not(:last-child) {
+    margin-bottom: 0.5em;    
+}
+
+.reveal ul ul
+{
+    list-style-type: disc;    
+    margin-top: 0.2em;
+    margin-left: 20px;;
+}
+
+.reveal ul ul li
+{
+    font-size: 0.9em;
+}
+
+.reveal ul ul li:not(:last-child)
+{
+    font-size: 0.9em;
+    margin: 0.2em 0 0.2em 0;
+}
+
+.reveal pre code {
+    padding: 10px;
+    font-size: 0.8em;
+}
+
+.reveal code {
+    color: lemonchiffon;
+    font-family: "Cascadia Mono", "Fira Code";
+}
+
+
+/*********
+  tables
+**********/
+
+.reveal table {
+    margin-top: 1em !important;
+    margin-bottom: 1em !important;
+
+}
+
+.reveal table th
+{
+    color: aquamarine !important;
+}
+
+.reveal table td {
+    font-size: 0.8em;
+}
+
+
+/**************** 
+  helpers
+*****************/
+
+.text-error {
+    color: tomato;
+}
+
+.text-ok {
+    color: yellowgreen;
+}
+
+.text-blue-h {
+    color: #045475;
+}
+
+.text-08
+{
+    font-size: 0.8em !important;
+}
+
+.text-07
+{
+    font-size: 0.7em !important;
+}
+
+.text-06
+{
+    font-size: 0.6em !important;
+}
+
+.text-05
+{
+    font-size: 0.5em !important;
+}
+
+.reveal ul+pre,
+.reveal p+pre {
+    padding-top: 1em;
+}

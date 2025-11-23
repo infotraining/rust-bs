@@ -1,0 +1,26 @@
+
+
+# PITCHME-DOT-YAML-SETTINGS-THEME-BUILDER-GENERATED-START
+gitpitch         : 3.0  
+theme            : template
+#theme-background : [ "#2D5569" ]
+theme-background : [ "#045475" ]
+theme-background : [ "linear-gradient(45deg, #0b3659, #055c7c, #0b3659)" ]
+theme-headline   : [ "FiraSans-Bold", "#F1C40F", "none", "#F1C40F", "55", "120", "30" ]
+theme-byline     : [ "FiraSans-Bold", "#F1C40F", "none", "#F1C40F", "55", "110", "30" ]
+theme-text       : [ "Open Sans", "#FFFFFF", "none", "#E1B41E", "60", "110", "15" ]
+theme-links      : [ "greenyellow", "orange" ]
+theme-code       : [ "Fira Code", "80", "120" ]
+highlight        : agate
+code-line-numbers : true
+theme-controls   : [ "#C0C0C0" ]
+theme-margins    : [ "0", "20px" ]
+logo             : img/logo.png
+logo-position    : bottom-right
+layout           : center
+theme-override   : css/custom-theme.css
+# PITCHME-DOT-YAML-SETTINGS-THEME-BUILDER-GENERATED-END
+custom-fonts : [
+  "fonts/FiraSans-Bold.woff2",
+  "fonts/FiraSans-BoldItalic.woff2"
+]
