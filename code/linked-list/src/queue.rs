@@ -1,5 +1,3 @@
-use std::{mem, ptr};
-
 struct Node<T> {
     elem: T,
     next: Link<T>,
