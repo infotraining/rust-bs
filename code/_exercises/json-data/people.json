@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1,
+    "name": "Alice",
+    "age": 30,
+    "address": {
+      "street": "123 Main St",
+      "city": "Wonderland",
+      "country": "Fictionland"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "age": 35,
+    "address": {
+      "street": "456 Side St",
+      "city": "Wonderland",
+      "country": "Fictionland"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Charlie",
+    "age": 28,
+    "address": null
+  }
+]
