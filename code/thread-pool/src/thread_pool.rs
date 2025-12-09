@@ -1,6 +1,8 @@
 use std::fmt;
 use std::sync::{Arc, Mutex, mpsc};
 
+use tokio::sync::oneshot;
+
 pub type Job = Box<dyn FnOnce() + Send + 'static>;
 
 struct Worker {
@@ -86,6 +88,30 @@ impl ThreadPool {
         })?;
         Ok(())
     }
+
+    pub fn submit_tokio<F, T>(&self, f: F) -> Result<oneshot::Receiver<T>, ThreadPoolError>
+    where
+        F: FnOnce() -> T + Send + 'static,
+        T: Send + 'static,
+    {
+        let (tx, rx) = oneshot::channel::<T>();
+
+        let job = Box::new(move || {
+            let res = f();
+            // ignore send error: receiver may have been dropped
+            let _ = tx.send(res);
+        }) as Job;
+
+        let sender = self.sender.as_ref().ok_or(ThreadPoolError {
+            details: "ThreadPool has no sender.".to_string(),
+        })?;
+
+        sender.send(job).map_err(|_| ThreadPoolError {
+            details: "Failed to send job to the thread pool.".to_string(),
+        })?;
+
+        Ok(rx)
+    }
 }
 
 impl Drop for ThreadPool {
@@ -104,6 +130,8 @@ impl Drop for ThreadPool {
 
 #[cfg(test)]
 mod thread_pool_tests {
+    use std::os::windows::process;
+
     use super::*;
 
     #[test]
@@ -134,5 +162,37 @@ mod thread_pool_tests {
 
         let final_count = *counter.lock().unwrap();
         assert_eq!(final_count, 100);
+    }
+
+    async fn process_data(data: Vec<tokio::sync::oneshot::Receiver<i32>>) -> Result<i32, Box<dyn std::error::Error>> {
+
+        let mut sum = 0;
+        for item in data {
+            println!("Waiting for item...");
+            let square = item.await?;
+            println!("Got: {}", square);
+            sum += square;
+        }
+
+        Ok(sum)
+    }
+
+    #[tokio::test]
+    async fn submit_async_task() {
+        let pool = ThreadPool::new(4).expect("create pool");
+
+        let mut squares = Vec::new();
+        for i in 1..=10 {
+            let rx = pool.submit_tokio(move || {
+                println!("Computing square of {} on thread#{:?}", i, std::thread::current().id());
+                std::thread::sleep(std::time::Duration::from_millis(100 * i as u64));
+                i * i
+            }).expect("submit failed");
+            squares.push(rx);
+        }
+
+        let sum_of_squares =process_data(squares).await.expect("process data failed");
+        assert_eq!(sum_of_squares, 385);
+        println!("Sum of squares: {}", sum_of_squares);
     }
 }
