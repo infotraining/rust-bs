@@ -1,0 +1,15 @@
+[package]
+name = "plugins"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+plugin_a = ["dep:plugin_a"]
+plugin_b = ["dep:plugin_b"]
+
+
+[dependencies]
+corelib = { path = "../corelib" }
+plugin_a = { path = "../plugin_a", optional = true }
+plugin_b = { path = "../plugin_b", optional = true }

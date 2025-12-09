@@ -18,6 +18,14 @@ pub struct Parser {
     bracket_count: usize,
 }
 
+// A simple recursive descent parser for mathematical expressions.
+// Write grammar in EBNF:
+// expression = term;
+// term       = factor ( ( "-" | "+" ) factor )* ;
+// factor     = unary ( "/" | "*" ) unary )* ;
+// unary      = ( "-" )* unary | primary ;
+// primary    = NUMBER | "(" expression ")" ;
+
 impl Parser {
     pub fn new(expression: &str) -> Result<Self, ParserError> {
         let tokenizer = Tokenizer::new(expression);

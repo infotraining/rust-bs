@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/corelib", "crates/plugin_a", "crates/plugin_b", "crates/plugins", "apps/cli"]
+resolver = "2"
