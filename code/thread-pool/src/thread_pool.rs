@@ -73,7 +73,7 @@ impl ThreadPool {
         })
     }
 
-    pub fn execute<F>(&self, f: F) -> Result<(), ThreadPoolError>
+    pub fn submit<F>(&self, f: F) -> Result<(), ThreadPoolError>
     where
         F: FnOnce() + Send + 'static,
     {
@@ -124,7 +124,7 @@ mod thread_pool_tests {
             for _ in 0..100 {
                 let counter_clone = std::sync::Arc::clone(&counter);
                 thread_pool
-                    .execute(move || {
+                    .submit(move || {
                         let mut num = counter_clone.lock().unwrap();
                         *num += 1;
                     })
